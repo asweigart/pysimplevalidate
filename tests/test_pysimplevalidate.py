@@ -29,42 +29,39 @@ def test_handleBlankValues():
     assert pysimplevalidate._handleBlankValues('X', blank=False, strip=False) is None
     assert pysimplevalidate._handleBlankValues(' X ', blank=False, strip=True) is None
 
-def test_getResponse():
+def test__getBlacklistResponse():
     pysimplevalidate.CACHE_REGEXES_ENABLED = False
-    assert pysimplevalidate._getResponse('cat', None) is None
-    assert pysimplevalidate._getResponse('cat', []) is None
-    assert pysimplevalidate._getResponse('cat', [('cat', 'response1')]) == 'response1'
-    assert pysimplevalidate._getResponse('cat', [('cat', 'response1'), ('cat', 'response2')]) == 'response1'
-    assert pysimplevalidate._getResponse('cat', [(r'\w+', 'response1')]) == 'response1'
+    assert pysimplevalidate._getBlacklistResponse('cat', None) is None
+    assert pysimplevalidate._getBlacklistResponse('cat', []) is None
+    assert pysimplevalidate._getBlacklistResponse('cat', [('cat', 'response1')]) == 'response1'
+    assert pysimplevalidate._getBlacklistResponse('cat', [('cat', 'response1'), ('cat', 'response2')]) == 'response1'
+    assert pysimplevalidate._getBlacklistResponse('cat', [(r'\w+', 'response1')]) == 'response1'
 
     # Cache the regex.
     pysimplevalidate.REGEX_CACHE == {}
     pysimplevalidate.CACHE_REGEXES_ENABLED = True
-    assert pysimplevalidate._getResponse('cat', [(r'\w+', 'response1')]) == 'response1'
+    assert pysimplevalidate._getBlacklistResponse('cat', [(r'\w+', 'response1')]) == 'response1'
     assert pysimplevalidate.REGEX_CACHE != {}
-    assert pysimplevalidate._getResponse('cat', [(r'\w+', 'response1')]) == 'response1'
+    assert pysimplevalidate._getBlacklistResponse('cat', [(r'\w+', 'response1')]) == 'response1'
 
 
 def test__validateGenericParameters():
-    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses=None) is None
-    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses=[]) is None
-    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses=[('x', 'x')]) is None
-    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses=[('x', 'x'), ('x', 'x')]) is None
+    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist=None) is None
+    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist=[]) is None
+    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist=[('x', 'x')]) is None
+    assert pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist=[('x', 'x'), ('x', 'x')]) is None
 
     with pytest.raises(pysimplevalidate.PySimpleValidateException):
-        pysimplevalidate._validateGenericParameters(blank=None, strip=True, responses=[])
+        pysimplevalidate._validateGenericParameters(blank=None, strip=True, blacklist=[])
 
     with pytest.raises(pysimplevalidate.PySimpleValidateException):
-        pysimplevalidate._validateGenericParameters(blank=True, strip=None, responses=[])
+        pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist='x')
 
     with pytest.raises(pysimplevalidate.PySimpleValidateException):
-        pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses='x')
+        pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist=[('x', 42)])
 
     with pytest.raises(pysimplevalidate.PySimpleValidateException):
-        pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses=[('x', 42)])
-
-    with pytest.raises(pysimplevalidate.PySimpleValidateException):
-        pysimplevalidate._validateGenericParameters(blank=True, strip=True, responses=[(42, 'x')])
+        pysimplevalidate._validateGenericParameters(blank=True, strip=True, blacklist=[(42, 'x')])
 
 
 def test_validateNum():
@@ -96,7 +93,7 @@ def test_validateNum():
     with pytest.raises(pysimplevalidate.ValidationException, message="' ' is not a number."):
         pysimplevalidate.validateNum(' ', blank=True, strip=False, _numType='num')
 
-    # TODO - need to test strip, responses
+    # TODO - need to test strip, blacklist
 
 def test_validateInt():
     assert pysimplevalidate.validateInt('42')

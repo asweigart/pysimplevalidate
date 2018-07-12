@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='PySimpleValidate',
-    version=__import__('pyautogui').__version__,
+    version=__import__('pysimplevalidate').__version__,
     url='https://github.com/asweigart/pysimplevalidate',
     author='Al Sweigart',
     author_email='al@inventwithpython.com',
