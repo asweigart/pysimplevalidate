@@ -2,4 +2,7 @@ dist
 _build
 *.pyc
 __pycache__
-PySimpleValidate.egg-info
+PyRect.egg-info
+htmlcov
+.pytest_cache
+.coverage
