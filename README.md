@@ -1,2 +1,3 @@
 # pysimplevalidate
-A simple collection of validation functions that work on strings, suitable for use in other applications.
+
+A collection of string-based validation functions, suitable for use in other Python 2 and 3 applications.
