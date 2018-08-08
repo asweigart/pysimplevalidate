@@ -43,6 +43,9 @@ URL_REGEX = re.compile(r"""(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256
 
 STATES = ('Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming', 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY')
 STATES_UPPER = tuple([state.upper() for state in STATES])
+MONTHS = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+
+DEFAULT_BLACKLIST_RESPONSE = 'This response is invalid.'
 
 
 class PySimpleValidateException(Exception):
@@ -72,9 +75,13 @@ def _errstr(value):
 
 
 def _getStrippedValue(value, strip=True):
+    """Like the strip() str method, except the strip argument describes different behavior:
+    If the strip argument is the Boolean True value, whitespace is stripped.
+    If the strip argument is a string, the characters in the string are stripped.
+    If the strip argument is None, nothing is stripped."""
     if strip is True:
         value = value.strip() # Call strip() with no arguments to strip whitespace.
-    elif strip is not False:
+    elif isinstance(strip, str):
         value = value.strip(strip) # Call strip(), passing the strip argument.
     return value
 
@@ -95,26 +102,42 @@ def _handleBlankValues(value, blank=False, strip=True):
         return None
 
 
-def _getBlacklistResponse(value, blacklist):
-    """Where blacklist is a list of ('regex', 'response') tuples, this function
-    returns the first response string whose regex matches value. Returns None
-    if the value matches none of the regexes."""
+def _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
+    """Where whitelistRegexes is a list of regex strings, this function returns True
+    if value matches any of the regexes. Otherwise, returns False if the value
+    is not on the whitelistRegexes or blacklistRegexes.
 
-    # NOTE: blacklist is not validated in this private function.
+    Where blacklistRegexes is a list of ('regex', 'response') tuples or a list of
+    regex strings, this function raises a ValidationException with the response
+    string as the exception message for the for the first regex that matches."""
 
-    if blacklist is None:
-        return None
+    # NOTE: whitelistRegexes and blacklistRegexes aren't validated in this function.
 
-    for regex, response in blacklist:
-        mo = re.compile(regex).search(value)
-        if mo is not None:
-            # Return the response that matches this regex.
-            return response
-    return None
+    # Check the whitelistRegexes.
+    if whitelistRegexes is not None:
+        for regex in whitelistRegexes:
+            if re.search(regex, value) is not None:
+                return True
+
+    # Check the blacklistRegexes.
+    if blacklistRegexes is not None:
+        for blacklistRegexesed in blacklistRegexes:
+            if isinstance(blacklistRegexesed, str):
+                regex, response = blacklistRegexesed, DEFAULT_BLACKLIST_RESPONSE
+            else:
+                regex, response = blacklistRegexesed
+
+            if re.search(regex, value) is not None:
+                # Return the response that matches this regex.
+                raise ValidationException(response)
+
+    return False
 
 
-def _validateGenericParameters(blank, strip, blacklist):
-    """Returns None if the blank, strip, and blacklist parameters that all
+
+
+def _validateGenericParameters(blank, strip, whitelistRegexes, blacklistRegexes):
+    """Returns None if the blank, strip, and blacklistRegexes parameters that all
     of PySimpleValidate's validation functions have. Raises a PySimpleValidateException
     if any of the arguments are invalid."""
 
@@ -124,33 +147,60 @@ def _validateGenericParameters(blank, strip, blacklist):
     if not isinstance(strip, (bool, str, type(None))):
         raise PySimpleValidateException('strip argument must be a bool, None, or str')
 
-    if blacklist is None:
-        blacklist = [] # blacklist defaults to a blank list.
+    if whitelistRegexes is None:
+        whitelistRegexes = [] # whitelistRegexes defaults to a blank list.
 
     try:
-        len(blacklist) # Make sure blacklist is a sequence.
-        for response in blacklist:
-            if len(response) != 2:
-                raise Exception() # Run the code in the except clause.
-            if not isinstance(response[0], str) or not isinstance(response[1], str):
-                raise Exception() # Run the code in the except clause.
+        len(whitelistRegexes) # Make sure whitelistRegexes is a sequence.
     except:
-        raise PySimpleValidateException('blacklist must be a sequence of (regex_str, str) tuples')
+        raise PySimpleValidateException('whitelistRegexes must be a sequence of regex_strs')
+    for response in whitelistRegexes:
+        if not isinstance(response[0], str):
+            raise PySimpleValidateException('whitelistRegexes must be a sequence of regex_strs')
+
+
+    if blacklistRegexes is None:
+        blacklistRegexes = [] # blacklistRegexes defaults to a blank list.
+
+    try:
+        len(blacklistRegexes) # Make sure blacklistRegexes is a sequence of (regex_str, str) or strs.
+    except:
+        raise PySimpleValidateException('blacklistRegexes must be a sequence of (regex_str, str) tuples or regex_strs')
+    for response in blacklistRegexes:
+        if isinstance(response, str):
+            continue
+        if len(response) != 2:
+            raise PySimpleValidateException('blacklistRegexes must be a sequence of (regex_str, str) tuples or regex_strs')
+        if not isinstance(response[0], str) or not isinstance(response[1], str):
+            raise PySimpleValidateException('blacklistRegexes must be a sequence of (regex_str, str) tuples or regex_strs')
 
 
 def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterThan=None):
+    """Raises an exception if the arguments are invalid. This is called by
+    the validateNum(), validateInt(), and validateFloat() functions to check its arguments. This code was
+    refactored out to a separate function so that the PyInputPlus module (or
+    other modules) could check their parameters' arguments for validateChoice
+    """
     for name, val in (('min', min), ('max', max),
                       ('lessThan', lessThan), ('greaterThan', greaterThan)):
         if not isinstance(val, (int, float, type(None))):
             raise PySimpleValidateException(name + ' argument must be int, float, or NoneType')
 
 
-def validateNum(value, blank=False, strip=True, blacklist=None, _numType='num',
+def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, _numType='num',
                 min=None, max=None, lessThan=None, greaterThan=None):
-    """Returns None if value is a number. TODO"""
+    """Returns True if value is a number that passes validation. Raises an
+    exception if ValidationException if value fails validation.
+
+    Args:
+        value (str): The value being validated as a number.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of str that will explicitly fail validation."""
     # Validate parameters.
     value = str(value)
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=None, blacklistRegexes=blacklistRegexes)
     _validateParamsFor_validateNum(min=min, max=max, lessThan=lessThan, greaterThan=greaterThan)
 
     if _handleBlankValues(value, blank, strip) is True:
@@ -158,6 +208,11 @@ def validateNum(value, blank=False, strip=True, blacklist=None, _numType='num',
 
     # Optionally strip whitespace or other characters from value.
     value = _getStrippedValue(value, strip)
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
+        return True
+
 
     # Validate the value's type (and convert value back to a number type).
     if (_numType == 'num' and '.' in value):
@@ -202,29 +257,24 @@ def validateNum(value, blank=False, strip=True, blacklist=None, _numType='num',
     if greaterThan is not None and value <= greaterThan:
         raise ValidationException(_('Input must be greater than %s.') % (greaterThan))
 
-    # Get specific response.
-    result = _getBlacklistResponse(value, blacklist)
-    if result is not None:
-        return result
-
     return True
 
 
-def validateInt(value, blank=False, strip=True, blacklist=None,
+def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None):
-    return validateNum(value=value, blank=blank, strip=strip,
-                       blacklist=blacklist, _numType='int', min=min, max=max,
+    return validateNum(value=value, blank=blank, strip=strip, whitelistRegexes=None,
+                       blacklistRegexes=blacklistRegexes, _numType='int', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
 
 
-def validateFloat(value, blank=False, strip=True, blacklist=None,
+def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None):
-    return validateNum(value=value, blank=blank, strip=strip,
-                       blacklist=blacklist, _numType='float', min=min, max=max,
+    return validateNum(value=value, blank=blank, strip=strip, whitelistRegexes=None,
+                       blacklistRegexes=blacklistRegexes, _numType='float', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
 
 
-def _validateParamsFor_validateChoice(choices, blank=False, strip=True, blacklist=None,
+def _validateParamsFor_validateChoice(choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False):
     """Raises an exception if the arguments are invalid. This is called by
     the validateChoice() function to check its arguments. This code was
@@ -245,7 +295,7 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, blacklis
         raise PySimpleValidateException('choices must have at least one item')
 
 
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=None, blacklistRegexes=blacklistRegexes)
 
     for choice in choices:
         if not isinstance(choice, str):
@@ -256,15 +306,19 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, blacklis
         raise PySimpleValidateException('numbered and lettered arguments cannot both be True')
 
 
-def validateChoice(value, choices, blank=False, strip=True, blacklist=None,
+def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False):
 
     # Validate parameters.
-    _validateParamsFor_validateChoice(choices=choices, blank=blank, strip=strip,
-        blacklist=blacklist, numbered=numbered, lettered=lettered, caseSensitive=caseSensitive)
+    _validateParamsFor_validateChoice(choices=choices, blank=blank, strip=strip, whitelistRegexes=None,
+        blacklistRegexes=blacklistRegexes, numbered=numbered, lettered=lettered, caseSensitive=caseSensitive)
 
     value = str(value)
     if _handleBlankValues(value, blank, strip) is True:
+        return True
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
         return True
 
     # Optionally strip whitespace or other characters from value.
@@ -282,16 +336,11 @@ def validateChoice(value, choices, blank=False, strip=True, blacklist=None,
     if not caseSensitive and value.upper() in [choice.upper() for choice in choices]:
         return True
 
-    # Get specific response.
-    result = _getBlacklistResponse(value, blacklist)
-    if result is not None:
-        return result
-
     raise ValidationException(_('%r is not a valid choice.') % (_errstr(value)))
 
 
-def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=True, blacklist=None):
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
     if formats is None:
         raise PySimpleValidateException('formats parameter must be specified')
 
@@ -310,12 +359,16 @@ def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=Tru
             raise PySimpleValidateException('formats argument contains invalid strftime format strings')
 
 
-def _validateToDateTimeFormat(value, formats, blank=False, strip=True, blacklist=None):
+def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # Validate parameters.
-    _validateParamsFor__validateToDateTimeFormat(formats, blank=blank, strip=strip, blacklist=blacklist)
+    _validateParamsFor__validateToDateTimeFormat(formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
     value = str(value)
     if _handleBlankValues(value, blank, strip) is True:
+        return True
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
         return True
 
     # Optionally strip whitespace or other characters from value.
@@ -331,71 +384,75 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, blacklist
     raise ValidationException(_('%r is not a valid time formatted as %s') % (value, time.strftime(formats[0])))
 
 
-def validateTime(value, blank=False, strip=True, blacklist=None,
+def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                  formats=('%H:%M:%S', '%H:%M', '%X')):
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
-        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, blacklist=blacklist):
+        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
     except ValidationException:
         raise ValidationException(_('%r is not a valid time formatted as %s') % (_errstr(value), time.strftime(formats[0])))
 
 
-def validateDate(value, blank=False, strip=True, blacklist=None,
+def validateDate(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                  formats=('%m/%d/%Y', '%m/%d/%y', '%Y/%m/%d', '%y/%m/%d', '%x')):
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
-        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, blacklist=blacklist):
+        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
     except ValidationException:
         raise ValidationException(_('%r is not a valid date formatted as %s') % (_errstr(value), time.strftime(formats[0])))
 
 
-def validateDatetime(value, blank=False, strip=True, blacklist=None,
+def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                      formats=('%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%x %H:%M:%S',
                               '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%x %H:%M',
                               '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%x %H:%M:%S')):
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
-        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, blacklist=blacklist):
+        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
     except ValidationException:
         raise ValidationException(_('%r is not a valid date and time formatted as %s.') % (_errstr(value), time.strftime(formats[0])))
 
 
-def validateFilename(value, blank=False, strip=True, blacklist=None, mustExist=False):
+def validateFilename(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, mustExist=False):
     # TODO - finish this.
     if value.endswith(' '):
         raise ValidationException(_('%r is not a valid filename because it ends with a space.') % (_errstr(value)))
     raise NotImplementedError()
 
 
-def validateFilepath(value, blank=False, strip=True, blacklist=None, mustExist=False):
+def validateFilepath(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, mustExist=False):
     # TODO - finish this.
     raise NotImplementedError()
 
 
-def validateIpAddr(value, blank=False, strip=True, blacklist=None):
-    # Reuse the logic in validateRege()
+def validateIpAddr(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+    # Reuse the logic in validateRegex()
     try:
-        if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, blacklist=blacklist):
+        if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
-        if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, blacklist=blacklist):
+        if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
     except ValidationException:
         raise ValidationException(_('%r is not a valid IP address.') % (_errstr(value)))
 
 
-def _validateParamsFor_validateRegex(blank=False, strip=True, blacklist=None):
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+def _validateParamsFor_validateRegex(blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
 
-def validateRegex(value, regex='', flags=0, blank=False, strip=True, blacklist=None):
+def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # Validate parameters.
-    _validateParamsFor_validateRegex(blank=False, strip=True, blacklist=None)
-    value = str(value)
+    _validateParamsFor_validateRegex(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
+    value = str(value)
     if _handleBlankValues(value, blank, strip) is True:
+        return True
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
         return True
 
     # Optionally strip whitespace or other characters from value.
@@ -407,13 +464,13 @@ def validateRegex(value, regex='', flags=0, blank=False, strip=True, blacklist=N
         raise ValidationException(_('%r does not match the specified pattern.') % (_errstr(value)))
 
 
-def _validateParamsFor_validateLiteralRegex(blank=False, strip=True, blacklist=None):
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+def _validateParamsFor_validateLiteralRegex(blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
 
-def validateLiteralRegex(value, blank=False, strip=True, blacklist=None):
+def validateLiteralRegex(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # TODO - I'd be nice to check regexes in other languages, i.e. JS and Perl.
-    _validateParamsFor_validateRegex(blank=blank, strip=strip, blacklist=blacklist)
+    _validateParamsFor_validateRegex(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
     try:
         re.compile(value)
@@ -421,19 +478,30 @@ def validateLiteralRegex(value, blank=False, strip=True, blacklist=None):
         raise ValidationException(_('%r is not a valid regular expression: %s') % (_errstr(value), ex))
 
 
-def validateURL(value, blank=False, strip=True, blacklist=None):
+def validateURL(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # Reuse the logic in validateRege()
     try:
-        if validateRegex(value=value, blank=blank, strip=strip, blacklist=blacklist):
+        if validateRegex(value=value, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
     except ValidationException:
         raise ValidationException(_('%r is not a valid URL.') % (value))
 
 
-def validateYesNo(value, blank=False, strip=True, blacklist=None, yes='yes', no='no', caseSensitive=False):
+def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, yes='yes', no='no', caseSensitive=False):
     # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+
     value = str(value)
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+    if _handleBlankValues(value, blank, strip) is True:
+        return True
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
+        return True
+
+    # Optionally strip whitespace or other characters from value.
+    value = _getStrippedValue(value, strip)
+
 
     yes = str(yes)
     no = str(no)
@@ -467,12 +535,16 @@ def validateAddress():
     raise NotImplementedError()
 
 
-def validateState(value, blank=False, strip=True, blacklist=None, caseSensitive=False):
+def validateState(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, caseSensitive=False):
     # Validate parameters.
-    value = str(value)
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
+    value = str(value)
     if _handleBlankValues(value, blank, strip) is True:
+        return True
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
         return True
 
     # Optionally strip whitespace or other characters from value.
@@ -488,11 +560,10 @@ def validateState(value, blank=False, strip=True, blacklist=None, caseSensitive=
     raise ValidationException(_('%r is not a state.') % (_errstr(value)))
 
 
-
-def validateZip(value, blank=False, strip=True, blacklist=None):
+def validateZip(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # Validate parameters.
     value = str(value)
-    _validateGenericParameters(blank=blank, strip=strip, blacklist=blacklist)
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
     if _handleBlankValues(value, blank, strip) is True:
         return True
@@ -515,17 +586,22 @@ def validatePhone():
     raise NotImplementedError()
 
 
-def validateMonth(value, blank=False, strip=True, blacklist=None, caseSensitive=False,
-                  monthNames=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']):
+def validateMonth(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, caseSensitive=False,
+                  monthNames=MONTHS):
     # TODO - accept abbreviated forms and numbered months as well.
     raise NotImplementedError()
 
+
 def validateDay():
+    # TODO - reuse validateChoice for this function
     raise NotImplementedError()
+
 
 def validateDayOfMonth():
+    # TODO - reuse validateChoice for this function
     raise NotImplementedError()
+
 
 def validateYear():
+    # TODO - reuse validateInt for this function
     raise NotImplementedError()
-
