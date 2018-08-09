@@ -122,22 +122,6 @@ def _getStrippedValue(value, strip=True):
     return value
 
 
-def _handleBlankValues(value, blank=False, strip=True):
-    """Raise a ValidationException if the value is blank and blanks aren't
-    allowed. Returns the striped `value` if it is an empty string and blank is `True`."""
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
-
-    # Validate for blank values.
-    if not blank and value == '':
-        raise ValidationException(_('Blank values are not allowed.'))
-    elif blank and value == '':
-        return value
-    else:
-        return None
-
-
 def _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
     """Where whitelistRegexes is a list of regex strings, this function returns True
     if value matches any of the regexes. Otherwise, returns False if the value
@@ -183,7 +167,11 @@ def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     # Optionally strip whitespace or other characters from value.
     value = _getStrippedValue(value, strip)
 
-    value = _handleBlankValues(value, blank, strip) is True:
+    # Validate for blank values.
+    if not blank and value == '':
+        # value is blank but blanks aren't allowed.
+        raise ValidationException(_('Blank values are not allowed.'))
+    elif blank and value == '':
         return True, value
 
     # Check white and blacklistRegexes.
@@ -422,8 +410,12 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, whitelis
 
 def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False):
-    """Returns True if value is one of the values in choices. Raises an
-    exception if ValidationException if value fails validation.
+    """Returns the selected choice if it's one of the values in `choices`. Raises
+    an exception if ValidationException if value fails validation.
+
+    If `lettered` is `True`, lower or uppercase letters will be accepted regardless
+    of what `caseSensitive` is set to. The `caseSensitive` argumnet only matters
+    for matching with the text of the strings in `choices`.
 
     Args:
         value (str): The value being validated.
@@ -451,14 +443,14 @@ def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=Non
     # Validate against choices.
     if value in choices:
         return value
-    if numbered and value.isdigit() and 0 < int(value) <= len(choices):
+    if numbered and value.isdigit() and 0 < int(value) <= len(choices): # value must be 1 to len(choices)
         # Numbered options begins at 1, not 0.
-        return True
+        return choices[int(value) - 1] # -1 because the numbers are 1 to len(choices) but the index are 0 to len(choices) - 1
     if lettered and len(value) == 1 and value.isalpha() and 0 < ord(value.upper()) - 64 <= len(choices):
         # Lettered options are always case-insensitive.
-        return True
+        return choices[ord(value.upper()) - 65]
     if not caseSensitive and value.upper() in [choice.upper() for choice in choices]:
-        return True
+        return choices[[choice.upper() for choice in choices].index(value.upper())]
 
     raise ValidationException(_('%r is not a valid choice.') % (_errstr(value)))
 
