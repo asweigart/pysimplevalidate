@@ -243,10 +243,10 @@ def test_validateState():
     assert pysv.validateState('California')
 
 
-def test_validateZip():
-    assert pysv.validateZip('94105')
+def test_validateZipCode():
+    assert pysv.validateZipCode('94105')
     with pytest.raises(pysv.ValidationException, message="'XXX' is not a zip code."):
-        pysv.validateZip('XXX')
+        pysv.validateZipCode('XXX')
 
 
 def test__validateParamsFor_validateChoice():

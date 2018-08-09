@@ -1,20 +1,56 @@
-# PySimpleValidate
-# By Al Sweigart
+"""PySimpleValidate
+By Al Sweigart al@inventwithpython.com
 
-# TODO: Add "strict mode"
+The validate* functions in this module accept a `value` argument and raise a
+`ValidationException` if it doesn't pass validation.
+
+If `value` was valid, the function returns. The meaning of the return value
+depends on the particular validation function, but most often is simply `True`.
+
+The following (hopefully self-descriptive) validation functions are implemented
+in this module:
+
+* `validateNum()`
+* `validateInt()`
+* `validateFloat()`
+* `validateChoice()`
+* `validateDate()`
+* `validateTime()`
+* `validateDatetime()`
+* `validateRegex()`
+* `validateLiteralRegex()`
+* `validateURL()`
+* `validateYesNo()`
+* `validateState
+* `validateStateAbbrev()`
+* `validateZipCode()`
+* `validateMonth()`
+* `validateDayOfWeek()`
+* `validateDayOfMonth()`
+* `validateYear()`
+
+These validation functions have the following common parameters:
+
+* `value` (str): The value being validated as a number.
+* `blank` (bool): If `False`, a blank string for value will be accepted. Defaults to `False`.
+* `strip` (bool, str, None): If `True`, whitespace is stripped from `value`. If a str, the characters in it are stripped from value. If `None`, nothing is stripped. Defaults to `True`.
+* `whitelistRegexes` (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers. Defaults to `None`.
+* `blacklistRegexes` (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation. Defaults to `None`.
+
+Further, the text-based validators have the following common parameters:
+
+* `caseSensitive` (bool): If `True`, `value` must match the exact casing of an acceptable response. If `False`, any casing can be used. Defaults to `False`.
+
+"""
+
 from __future__ import absolute_import, division, print_function
 
 import re
 import time
 
-
-
-
 __version__ = '0.1.0'
 
-
-MAX_ERROR_STR_LEN = 50
-
+MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
 # From https://stackoverflow.com/a/5284410/1893164
 IPV4_REGEX = re.compile(r"""((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}""")
@@ -88,7 +124,7 @@ def _getStrippedValue(value, strip=True):
 
 def _handleBlankValues(value, blank=False, strip=True):
     """Raise a ValidationException if the value is blank and blanks aren't
-    allowed. Returns True if value is an empty string and blank is True."""
+    allowed. Returns the striped `value` if it is an empty string and blank is `True`."""
 
     # Optionally strip whitespace or other characters from value.
     value = _getStrippedValue(value, strip)
@@ -97,7 +133,7 @@ def _handleBlankValues(value, blank=False, strip=True):
     if not blank and value == '':
         raise ValidationException(_('Blank values are not allowed.'))
     elif blank and value == '':
-        return True
+        return value
     else:
         return None
 
@@ -134,6 +170,27 @@ def _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
     return False
 
 
+def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes):
+    """Returns a tuple of two values: the first is a bool that tells the caller
+    if they should immediately return True, the second is a new, possibly stripped
+    value for the calling validation function's `value` parameter.
+
+    This function is called by the validate*() functions to perform some common
+    housekeeping."""
+
+    value = str(value)
+
+    # Optionally strip whitespace or other characters from value.
+    value = _getStrippedValue(value, strip)
+
+    value = _handleBlankValues(value, blank, strip) is True:
+        return True, value
+
+    # Check white and blacklistRegexes.
+    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
+        return True, value
+
+    return False, value
 
 
 def _validateGenericParameters(blank, strip, whitelistRegexes, blacklistRegexes):
@@ -181,6 +238,19 @@ def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterTha
     refactored out to a separate function so that the PyInputPlus module (or
     other modules) could check their parameters' arguments for validateChoice
     """
+
+    if (min is not None) and (greaterThan is not None):
+        raise PySimpleValidateException('only one argument for min or greaterThan can be passed, not both')
+    if (max is not None) and (lessThan is not None):
+        raise PySimpleValidateException('only one argument for max or lessThan can be passed, not both')
+
+    if (min is not None) and (max is not None) and (min > max):
+        raise PySimpleValidateException('the min argument must be less than or equal to the max argument')
+    if (min is not None) and (lessThan is not None) and (min >= lessThan):
+        raise PySimpleValidateException('the min argument must be less than the lessThan argument')
+    if (max is not None) and (greaterThan is not None) and (max <= greaterThan):
+        raise PySimpleValidateException('the max argument must be greater than the greaterThan argument')
+
     for name, val in (('min', min), ('max', max),
                       ('lessThan', lessThan), ('greaterThan', greaterThan)):
         if not isinstance(val, (int, float, type(None))):
@@ -192,27 +262,30 @@ def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklist
     """Returns True if value is a number that passes validation. Raises an
     exception if ValidationException if value fails validation.
 
+    The value can pass validation if it is a number, either int or float.
+
     Args:
         value (str): The value being validated as a number.
         blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        whitelistRegexes (Sequence, None): A sequence of str that will explicitly pass validation, even if they aren't numbers.
-        blacklistRegexes (Sequence, None): A sequence of str that will explicitly fail validation."""
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
+        min (int, float): The (inclusive) minimum value for the value to pass validation.
+        max (int, float): The (inclusive) maximum value for the value to pass validation.
+        lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
+        greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+
+    If you specify min or max, you cannot also specify lessThan or greaterThan.
+    """
+
     # Validate parameters.
-    value = str(value)
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=None, blacklistRegexes=blacklistRegexes)
     _validateParamsFor_validateNum(min=min, max=max, lessThan=lessThan, greaterThan=greaterThan)
 
-    if _handleBlankValues(value, blank, strip) is True:
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
         return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
-
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True
-
 
     # Validate the value's type (and convert value back to a number type).
     if (_numType == 'num' and '.' in value):
@@ -262,6 +335,25 @@ def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
 def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None):
+    """Returns True if value is a number that passes validation. Raises an
+    exception if ValidationException if value fails validation.
+
+    The value can pass validation if it is an int.
+
+    Args:
+        value (str): The value being validated as a number.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
+        min (int, float): The (inclusive) minimum value for the value to pass validation.
+        max (int, float): The (inclusive) maximum value for the value to pass validation.
+        lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
+        greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+
+    If you specify min or max, you cannot also specify lessThan or greaterThan.
+    """
     return validateNum(value=value, blank=blank, strip=strip, whitelistRegexes=None,
                        blacklistRegexes=blacklistRegexes, _numType='int', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
@@ -269,6 +361,28 @@ def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
 def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None):
+    """Returns True if value is a number that passes validation. Raises an
+    exception if ValidationException if value fails validation.
+
+    The value can pass validation if it is a float.
+
+    Args:
+        value (str): The value being validated as a number.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
+        min (int, float): The (inclusive) minimum value for the value to pass validation.
+        max (int, float): The (inclusive) maximum value for the value to pass validation.
+        lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
+        greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+
+    If you specify min or max, you cannot also specify lessThan or greaterThan.
+    """
+
+    # TODO: Accept "e" formatted numbers, like 1.0000000000000001e-48.
+
     return validateNum(value=value, blank=blank, strip=strip, whitelistRegexes=None,
                        blacklistRegexes=blacklistRegexes, _numType='float', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
@@ -308,26 +422,36 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, whitelis
 
 def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False):
+    """Returns True if value is one of the values in choices. Raises an
+    exception if ValidationException if value fails validation.
+
+    Args:
+        value (str): The value being validated.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        numbered (bool): TODO
+        lettered (bool): TODO
+        caseSensitive (bool): TODO
+
+    Returns the choice selected as it appeared in `choices`. That is, if `'cat'`
+    was a choice and the user entered `'CAT'` while caseSensitive is `False`,
+    this function will return `'cat'`.
+    """
 
     # Validate parameters.
     _validateParamsFor_validateChoice(choices=choices, blank=blank, strip=strip, whitelistRegexes=None,
         blacklistRegexes=blacklistRegexes, numbered=numbered, lettered=lettered, caseSensitive=caseSensitive)
 
-    value = str(value)
-    if _handleBlankValues(value, blank, strip) is True:
-        return True
-
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
+        return value
 
     # Validate against choices.
     if value in choices:
-        return True
-    if numbered and value.isdecimal() and 0 < int(value) <= len(choices):
+        return value
+    if numbered and value.isdigit() and 0 < int(value) <= len(choices):
         # Numbered options begins at 1, not 0.
         return True
     if lettered and len(value) == 1 and value.isalpha() and 0 < ord(value.upper()) - 64 <= len(choices):
@@ -363,16 +487,9 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelist
     # Validate parameters.
     _validateParamsFor__validateToDateTimeFormat(formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    value = str(value)
-    if _handleBlankValues(value, blank, strip) is True:
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
         return True
-
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
 
     # Validate against the given formats.
     for format in formats:
@@ -386,6 +503,18 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelist
 
 def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                  formats=('%H:%M:%S', '%H:%M', '%X')):
+    """Returns True if value is a time that passes validation. Raises an
+    exception if ValidationException if value fails validation.
+
+    Args:
+        value (str): The value being validated as a time.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid time.
+    """
+
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
         if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
@@ -396,6 +525,17 @@ def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklis
 
 def validateDate(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                  formats=('%m/%d/%Y', '%m/%d/%y', '%Y/%m/%d', '%y/%m/%d', '%x')):
+    """Returns True if value is a date that passes validation. Raises an
+    exception if ValidationException if value fails validation.
+
+    Args:
+        value (str): The value being validated as a time.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid date.
+    """
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
         if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
@@ -408,6 +548,18 @@ def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blac
                      formats=('%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%x %H:%M:%S',
                               '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%x %H:%M',
                               '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%x %H:%M:%S')):
+    """Returns True if value is a datetime that passes validation. Raises an
+    exception if ValidationException if value fails validation.
+
+    Args:
+        value (str): The value being validated as a time.
+        blank (bool): If False, a blank string for value will be accepted.
+        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
+        whitelistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+        blacklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+        formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid datetime.
+    """
+
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
         if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
@@ -447,16 +599,9 @@ def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRe
     # Validate parameters.
     _validateParamsFor_validateRegex(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    value = str(value)
-    if _handleBlankValues(value, blank, strip) is True:
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
         return True
-
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
 
     if re.compile(regex, flags).search(value) is not None:
         return True
@@ -471,6 +616,10 @@ def _validateParamsFor_validateLiteralRegex(blank=False, strip=True, whitelistRe
 def validateLiteralRegex(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # TODO - I'd be nice to check regexes in other languages, i.e. JS and Perl.
     _validateParamsFor_validateRegex(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
+        return True
 
     try:
         re.compile(value)
@@ -488,20 +637,11 @@ def validateURL(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
 
 def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, yes='yes', no='no', caseSensitive=False):
+
+    # Note: Rather than always return True, this function returns the original `yes` or `no` argument, depending on what `value` represents.
+
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
-
-    value = str(value)
-    if _handleBlankValues(value, blank, strip) is True:
-        return True
-
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
-
 
     yes = str(yes)
     no = str(no)
@@ -510,18 +650,23 @@ def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blackli
     if len(no) == 0:
         raise PySimpleValidateException('no argument must be a non-empty string.')
 
-    if _handleBlankValues(value, blank, strip) is True:
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
         return True
 
     # Optionally strip whitespace or other characters from value.
     value = _getStrippedValue(value, strip)
 
     if caseSensitive:
-        if value in (yes, no, yes[0], no[0]):
-            return True
+        if value in (yes, yes[0]):
+            return yes
+        elif value in (no, no[0]):
+            return no
     else:
-        if value.upper() in (yes.upper(), no.upper(), yes[0].upper(), no[0].upper()):
-            return True
+        if value in (yes.upper(), yes[0].upper()):
+            return yes
+        elif value in (no.upper(), no[0].upper()):
+            return no
 
     raise ValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yes, no))
 
@@ -539,16 +684,9 @@ def validateState(value, blank=False, strip=True, whitelistRegexes=None, blackli
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    value = str(value)
-    if _handleBlankValues(value, blank, strip) is True:
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
         return True
-
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
 
     if caseSensitive:
         if value in STATES:
@@ -560,16 +698,13 @@ def validateState(value, blank=False, strip=True, whitelistRegexes=None, blackli
     raise ValidationException(_('%r is not a state.') % (_errstr(value)))
 
 
-def validateZip(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def validateZipCode(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
     # Validate parameters.
-    value = str(value)
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    if _handleBlankValues(value, blank, strip) is True:
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
         return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
 
     try:
         int(value)
@@ -592,7 +727,7 @@ def validateMonth(value, blank=False, strip=True, whitelistRegexes=None, blackli
     raise NotImplementedError()
 
 
-def validateDay():
+def validateDayOfWeek():
     # TODO - reuse validateChoice for this function
     raise NotImplementedError()
 
