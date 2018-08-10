@@ -63,10 +63,10 @@ def test_validateNum():
         pysv.validateNum('')
 
     # Test for when blanks are allowed.
-    assert pysv.validateNum('', blank=True)
+    assert pysv.validateNum('', blank=True) == ''
 
     # Test for when blanks are allowed and value strips to a blank value.
-    assert pysv.validateNum('XXX', blank=True, strip='X')
+    assert pysv.validateNum('XXX', blank=True, strip='X') == ''
 
     # Test for when blanks aren't allowed and value strips to a blank value.
     with pytest.raises(pysv.ValidationException, message="' ' is not a number."):
@@ -81,7 +81,7 @@ def test_validateNum():
         pysv.validateNum('ABC', _numType='num')
     with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
         pysv.validateNum('', _numType='num')
-    assert pysv.validateNum('', blank=True, _numType='num')
+    assert pysv.validateNum('', blank=True, _numType='num') == ''
     with pytest.raises(pysv.ValidationException, message="' ' is not a number."):
         pysv.validateNum(' ', blank=True, strip=False, _numType='num')
 
@@ -103,7 +103,7 @@ def test_validateInt():
     # Test blank settings.
     with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
         pysv.validateInt('')
-    assert pysv.validateInt('', blank=True)
+    assert pysv.validateInt('', blank=True) == ''
     with pytest.raises(pysv.ValidationException, message="' ' is not an integer."):
         pysv.validateInt(' ', blank=True, strip=False)
 
@@ -118,7 +118,7 @@ def test_validateInt():
         pysv.validateNum('ABC', _numType='int')
     with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
         pysv.validateNum('', _numType='int')
-    assert pysv.validateNum('', blank=True, _numType='int')
+    assert pysv.validateNum('', blank=True, _numType='int') == ''
     with pytest.raises(pysv.ValidationException, message="' ' is not an integer."):
         pysv.validateNum(' ', blank=True, strip=False, _numType='int')
 
@@ -235,11 +235,11 @@ def test_validateRegex():
 
 def test_validateLiteralRegex():
     # Test typical usage.
-    assert pysv.validateRegex(r'\w+')
+    pysv.validateLiteralRegex(r'\w+')
 
 
     with pytest.raises(pysv.ValidationException):
-        pysv.validateRegex(r'(')
+        pysv.validateLiteralRegex(r'(')
 
 
 def test_validateIpAddr():
@@ -260,9 +260,9 @@ def test_validateYesNo():
     assert pysv.validateYesNo('NO')
     assert pysv.validateYesNo('N')
 
-    assert pysv.validateYesNo('si', yes='si')
-    assert pysv.validateYesNo('SI', yes='si')
-    assert pysv.validateYesNo('n', yes='oui', no='no')
+    assert pysv.validateYesNo('si', yesVal='si')
+    assert pysv.validateYesNo('SI', yesVal='si')
+    assert pysv.validateYesNo('n', yesVal='oui', noVal='no')
 
     # Test typical failure cases.
     with pytest.raises(pysv.ValidationException):
@@ -329,7 +329,11 @@ def test__validateParamsFor_validateChoice():
         pysv._validateParamsFor_validateChoice(['dog', 'dog'], caseSensitive=False)
 
     with pytest.raises(pysv.PySimpleValidateException, message='duplicate case-insensitive entries in choices argument'):
-        pysv._validateParamsFor_validateChoice(['dog', 'DOG'], caseSensitive=True)
+        pysv._validateParamsFor_validateChoice(['dog', 'DOG'], caseSensitive=False)
+
+    # "Duplicates" are fine if they have different cases:
+    pysv._validateParamsFor_validateChoice(['dog', 'DOG'], caseSensitive=True)
+
 
 
 def test__validateParamsFor_validateNum():

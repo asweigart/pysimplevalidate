@@ -4,8 +4,11 @@ By Al Sweigart al@inventwithpython.com
 The validate* functions in this module accept a `value` argument and raise a
 `ValidationException` if it doesn't pass validation.
 
-If `value` was valid, the function returns. The meaning of the return value
-depends on the particular validation function, but most often is simply `True`.
+If `value` was valid, the function returns. The return value is the form of
+the value that the validation function has accepted as value. This could
+include any transformations such as stripping whitespace from the ends.
+If the validation function returns because the value validates against one of
+the whitelist regexes, the value is returned.
 
 The following (hopefully self-descriptive) validation functions are implemented
 in this module:
@@ -45,6 +48,7 @@ Further, the text-based validators have the following common parameters:
 
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import re
 import time
 
@@ -122,38 +126,6 @@ def _getStrippedValue(value, strip=True):
     return value
 
 
-def _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-    """Where whitelistRegexes is a list of regex strings, this function returns True
-    if value matches any of the regexes. Otherwise, returns False if the value
-    is not on the whitelistRegexes or blacklistRegexes.
-
-    Where blacklistRegexes is a list of ('regex', 'response') tuples or a list of
-    regex strings, this function raises a ValidationException with the response
-    string as the exception message for the for the first regex that matches."""
-
-    # NOTE: whitelistRegexes and blacklistRegexes aren't validated in this function.
-
-    # Check the whitelistRegexes.
-    if whitelistRegexes is not None:
-        for regex in whitelistRegexes:
-            if re.search(regex, value) is not None:
-                return True
-
-    # Check the blacklistRegexes.
-    if blacklistRegexes is not None:
-        for blacklistRegexesed in blacklistRegexes:
-            if isinstance(blacklistRegexesed, str):
-                regex, response = blacklistRegexesed, DEFAULT_BLACKLIST_RESPONSE
-            else:
-                regex, response = blacklistRegexesed
-
-            if re.search(regex, value) is not None:
-                # Return the response that matches this regex.
-                raise ValidationException(response)
-
-    return False
-
-
 def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes):
     """Returns a tuple of two values: the first is a bool that tells the caller
     if they should immediately return True, the second is a new, possibly stripped
@@ -174,9 +146,22 @@ def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     elif blank and value == '':
         return True, value
 
-    # Check white and blacklistRegexes.
-    if _checkWhitelistBlacklist(value, whitelistRegexes, blacklistRegexes):
-        return True, value
+    # Check the whitelistRegexes.
+    if whitelistRegexes is not None:
+        for regex in whitelistRegexes:
+            if re.search(regex, value) is not None:
+                return True, value
+
+    # Check the blacklistRegexes.
+    if blacklistRegexes is not None:
+        for blacklistRegexesed in blacklistRegexes:
+            if isinstance(blacklistRegexesed, str):
+                regex, response = blacklistRegexesed, DEFAULT_BLACKLIST_RESPONSE
+            else:
+                regex, response = blacklistRegexesed
+
+            if re.search(regex, value) is not None:
+                raise ValidationException(response) # value is on a blacklist
 
     return False, value
 
@@ -247,7 +232,7 @@ def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterTha
 
 def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, _numType='num',
                 min=None, max=None, lessThan=None, greaterThan=None):
-    """Returns True if value is a number that passes validation. Raises an
+    """Returns an int or float of value if it passes validation. Raises an
     exception if ValidationException if value fails validation.
 
     The value can pass validation if it is a number, either int or float.
@@ -273,7 +258,7 @@ def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
+        return value
 
     # Validate the value's type (and convert value back to a number type).
     if (_numType == 'num' and '.' in value):
@@ -318,12 +303,12 @@ def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklist
     if greaterThan is not None and value <= greaterThan:
         raise ValidationException(_('Input must be greater than %s.') % (greaterThan))
 
-    return True
+    return value
 
 
 def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None):
-    """Returns True if value is a number that passes validation. Raises an
+    """Returns an int of value if it passes validation. Raises an
     exception if ValidationException if value fails validation.
 
     The value can pass validation if it is an int.
@@ -341,6 +326,14 @@ def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklist
         greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
 
     If you specify min or max, you cannot also specify lessThan or greaterThan.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateInt('42')
+    True
+    >>> pysv.validateInt('forty two')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: 'forty two' is not an integer.
     """
     return validateNum(value=value, blank=blank, strip=strip, whitelistRegexes=None,
                        blacklistRegexes=blacklistRegexes, _numType='int', min=min, max=max,
@@ -349,7 +342,7 @@ def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
 def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None):
-    """Returns True if value is a number that passes validation. Raises an
+    """Returns a float of value if it passes validation. Raises an
     exception if ValidationException if value fails validation.
 
     The value can pass validation if it is a float.
@@ -367,6 +360,27 @@ def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blackli
         greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
 
     If you specify min or max, you cannot also specify lessThan or greaterThan.
+
+    >>> import pysimplevalidate as pysv
+
+    >>> pysv.validateFloat('3.14')
+    True
+
+    >>> pysv.validateFloat('pi')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: 'pi' is not a float.
+
+    >>> pysv.validateFloat('3')
+    True
+
+    >>> pysv.validateFloat('3', min=3)
+    True
+
+    >>> pysv.validateFloat('3', greaterThan=3)
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: Input must be greater than 3.
     """
 
     # TODO: Accept "e" formatted numbers, like 1.0000000000000001e-48.
@@ -407,6 +421,12 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, whitelis
     if numbered and lettered:
         raise PySimpleValidateException('numbered and lettered arguments cannot both be True')
 
+    if len(choices) != len(set(choices)):
+        raise PySimpleValidateException('duplicate entries in choices argument')
+
+    if not caseSensitive and len(choices) != len(set([choice.upper() for choice in choices])):
+        raise PySimpleValidateException('duplicate case-insensitive entries in choices argument')
+
 
 def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False):
@@ -430,11 +450,40 @@ def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=Non
     Returns the choice selected as it appeared in `choices`. That is, if `'cat'`
     was a choice and the user entered `'CAT'` while caseSensitive is `False`,
     this function will return `'cat'`.
+
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateChoice('dog', ['dog', 'cat', 'moose'])
+    'dog'
+
+    >>> pysv.validateChoice('DOG', ['dog', 'cat', 'moose'])
+    'dog'
+
+    >>> pysv.validateChoice('2', ['dog', 'cat', 'moose'], numbered=True)
+    'cat'
+
+    >>> pysv.validateChoice('a', ['dog', 'cat', 'moose'], lettered=True)
+    'dog'
+
+    >>> pysv.validateChoice('C', ['dog', 'cat', 'moose'], lettered=True)
+    'moose'
+
+    >>> pysv.validateChoice('dog', ['dog', 'cat', 'moose'], lettered=True)
+    'dog'
+
+    >>> pysv.validateChoice('spider', ['dog', 'cat', 'moose'])
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: 'spider' is not a valid choice.
     """
 
     # Validate parameters.
     _validateParamsFor_validateChoice(choices=choices, blank=blank, strip=strip, whitelistRegexes=None,
         blacklistRegexes=blacklistRegexes, numbered=numbered, lettered=lettered, caseSensitive=caseSensitive)
+
+    if '' in choices:
+        # `blank` needs to be set to True here, otherwise '' won't be accepted as a choice.
+        blank = True
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
@@ -450,6 +499,7 @@ def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=Non
         # Lettered options are always case-insensitive.
         return choices[ord(value.upper()) - 65]
     if not caseSensitive and value.upper() in [choice.upper() for choice in choices]:
+        # Return the original item in choices that value has a case-insensitive match with.
         return choices[[choice.upper() for choice in choices].index(value.upper())]
 
     raise ValidationException(_('%r is not a valid choice.') % (_errstr(value)))
@@ -470,7 +520,7 @@ def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=Tru
 
     for format in formats:
         try:
-            time.strftime(format)
+            time.strftime(format) # This will raise an exception if the format is invalid.
         except:
             raise PySimpleValidateException('formats argument contains invalid strftime format strings')
 
@@ -481,16 +531,16 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelist
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
+        return value
 
     # Validate against the given formats.
     for format in formats:
         try:
-            time.strptime(value, format)
+            return datetime.datetime.strptime(value, format)
         except ValueError:
             continue # If this format fails to parse, move on to the next format.
-        return True
-    raise ValidationException(_('%r is not a valid time formatted as %s') % (value, time.strftime(formats[0])))
+
+    raise ValidationException(_('%r is not a valid time') % (value))
 
 
 def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
@@ -507,16 +557,18 @@ def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklis
         formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid time.
     """
 
+    # TODO - handle this
+
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
-        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
-            return True
+        dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+        return datetime.time(dt.hour, dt.minute, dt.second, dt.microsecond)
     except ValidationException:
-        raise ValidationException(_('%r is not a valid time formatted as %s') % (_errstr(value), time.strftime(formats[0])))
+        raise ValidationException(_('%r is not a valid time that follows the formats argument') % (_errstr(value)))
 
 
 def validateDate(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                 formats=('%m/%d/%Y', '%m/%d/%y', '%Y/%m/%d', '%y/%m/%d', '%x')):
+                 formats=('%Y/%m/%d', '%y/%m/%d', '%m/%d/%Y', '%m/%d/%y', '%x')):
     """Returns True if value is a date that passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -530,16 +582,16 @@ def validateDate(value, blank=False, strip=True, whitelistRegexes=None, blacklis
     """
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
-        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
-            return True
+        dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+        return datetime.date(dt.year, dt.month, dt.day)
     except ValidationException:
-        raise ValidationException(_('%r is not a valid date formatted as %s') % (_errstr(value), time.strftime(formats[0])))
+        raise ValidationException(_('%r is not a valid date that follows the formats argument') % (_errstr(value)))
 
 
 def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                     formats=('%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%x %H:%M:%S',
-                              '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%x %H:%M',
-                              '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%x %H:%M:%S')):
+                     formats=('%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S',
+                              '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%x %H:%M',
+                              '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S')):
     """Returns True if value is a datetime that passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -554,11 +606,15 @@ def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blac
 
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
-        if _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
-            return True
+        return _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
     except ValidationException:
-        raise ValidationException(_('%r is not a valid date and time formatted as %s.') % (_errstr(value), time.strftime(formats[0])))
+        raise ValidationException(_('%r is not a valid date and time that follows the formats argument') % (_errstr(value)))
 
+
+
+
+
+# TODO: The rest of these functions are under development.
 
 def validateFilename(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, mustExist=False):
     # TODO - finish this.
@@ -593,7 +649,7 @@ def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRe
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
+        return value
 
     if re.compile(regex, flags).search(value) is not None:
         return True
@@ -611,7 +667,7 @@ def validateLiteralRegex(value, blank=False, strip=True, whitelistRegexes=None, 
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
+        return value
 
     try:
         re.compile(value)
@@ -628,40 +684,41 @@ def validateURL(value, blank=False, strip=True, whitelistRegexes=None, blacklist
         raise ValidationException(_('%r is not a valid URL.') % (value))
 
 
-def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, yes='yes', no='no', caseSensitive=False):
-
+def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, yesVal='yes', noVal='no', caseSensitive=False):
     # Note: Rather than always return True, this function returns the original `yes` or `no` argument, depending on what `value` represents.
 
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    yes = str(yes)
-    no = str(no)
-    if len(yes) == 0:
-        raise PySimpleValidateException('yes argument must be a non-empty string.')
-    if len(no) == 0:
-        raise PySimpleValidateException('no argument must be a non-empty string.')
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    if returnNow:
+        return value
+
+    yesVal = str(yesVal)
+    noVal = str(noVal)
+    if len(yesVal) == 0:
+        raise PySimpleValidateException('yesVal argument must be a non-empty string.')
+    if len(noVal) == 0:
+        raise PySimpleValidateException('noVal argument must be a non-empty string.')
+    if yesVal == noVal:
+        raise PySimpleValidateException('yesVal and noVal arguments must be different.')
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
-
-    # Optionally strip whitespace or other characters from value.
-    value = _getStrippedValue(value, strip)
+        return value
 
     if caseSensitive:
-        if value in (yes, yes[0]):
-            return yes
-        elif value in (no, no[0]):
-            return no
+        if value in (yesVal, yesVal[0]):
+            return yesVal
+        elif value in (noVal, noVal[0]):
+            return noVal
     else:
-        if value in (yes.upper(), yes[0].upper()):
-            return yes
-        elif value in (no.upper(), no[0].upper()):
-            return no
+        if value.upper() in (yesVal.upper(), yesVal[0].upper()):
+            return yesVal
+        elif value.upper() in (noVal.upper(), noVal[0].upper()):
+            return noVal
 
-    raise ValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yes, no))
-
+    raise ValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yesVal, noVal))
 
 
 def validateName():
@@ -678,7 +735,7 @@ def validateState(value, blank=False, strip=True, whitelistRegexes=None, blackli
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
+        return value
 
     if caseSensitive:
         if value in STATES:
@@ -696,7 +753,7 @@ def validateZipCode(value, blank=False, strip=True, whitelistRegexes=None, black
 
     returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     if returnNow:
-        return True
+        return value
 
     try:
         int(value)
@@ -732,3 +789,7 @@ def validateDayOfMonth():
 def validateYear():
     # TODO - reuse validateInt for this function
     raise NotImplementedError()
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
