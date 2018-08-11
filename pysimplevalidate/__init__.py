@@ -21,16 +21,13 @@ in this module:
 * `validateTime()`
 * `validateDatetime()`
 * `validateRegex()`
-* `validateLiteralRegex()`
+* `validateRegexStr()`
 * `validateURL()`
 * `validateYesNo()`
 * `validateState
-* `validateStateAbbrev()`
-* `validateZipCode()`
 * `validateMonth()`
 * `validateDayOfWeek()`
 * `validateDayOfMonth()`
-* `validateYear()`
 
 These validation functions have the following common parameters:
 
@@ -48,6 +45,7 @@ Further, the text-based validators have the following common parameters:
 
 from __future__ import absolute_import, division, print_function
 
+import calendar
 import datetime
 import re
 import time
@@ -81,9 +79,14 @@ fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|     # fe80::7:8%eth0   fe80::7:8%
 
 URL_REGEX = re.compile(r"""(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)""")
 
-STATES = ('Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming', 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY')
-STATES_UPPER = tuple([state.upper() for state in STATES])
-MONTHS = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+STATES = {'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'} # TODO - make STATES a dictionary mapping abbreviation to full name
+STATES_UPPER = dict([(abbrev, STATES[abbrev].upper()) for abbrev in STATES.keys()])
+
+MONTHS = {'JAN': 'January', 'FEB': 'February', 'MAR': 'March', 'APR': 'April', 'MAY': 'May', 'JUN': 'June', 'JUL': 'July', 'AUG': 'August', 'SEP': 'September', 'OCT': 'October', 'NOV': 'November', 'DEC': 'December'}
+
+MONTH_NAMES = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+
+DAYS_OF_WEEK = {'SUN': 'Sunday', 'MON': 'Monday', 'TUE': 'Tuesday', 'WED': 'Wednesday', 'THU': 'Thursday', 'FRI': 'Friday', 'SAT': 'Saturday'}
 
 DEFAULT_BLACKLIST_RESPONSE = 'This response is invalid.'
 
@@ -126,7 +129,14 @@ def _getStrippedValue(value, strip=True):
     return value
 
 
-def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes):
+def _raiseValidationException(excMsg, customExcMsg=None):
+    if customExcMsg is None:
+        raise ValidationException(str(excMsg))
+    else:
+        raise ValidationException(str(customExcMsg))
+
+
+def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg):
     """Returns a tuple of two values: the first is a bool that tells the caller
     if they should immediately return True, the second is a new, possibly stripped
     value for the calling validation function's `value` parameter.
@@ -142,7 +152,7 @@ def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
     # Validate for blank values.
     if not blank and value == '':
         # value is blank but blanks aren't allowed.
-        raise ValidationException(_('Blank values are not allowed.'))
+        _raiseValidationException(_('Blank values are not allowed.'), excMsg)
     elif blank and value == '':
         return True, value
 
@@ -161,7 +171,7 @@ def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
                 regex, response = blacklistRegexesed
 
             if re.search(regex, value) is not None:
-                raise ValidationException(response) # value is on a blacklist
+                _raiseValidationException(response, excMsg) # value is on a blacklist
 
     return False, value
 
@@ -231,7 +241,7 @@ def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterTha
 
 
 def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, _numType='num',
-                min=None, max=None, lessThan=None, greaterThan=None):
+                min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
     """Returns an int or float of value if it passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -256,7 +266,7 @@ def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklist
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=None, blacklistRegexes=blacklistRegexes)
     _validateParamsFor_validateNum(min=min, max=max, lessThan=lessThan, greaterThan=greaterThan)
 
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
@@ -266,48 +276,48 @@ def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklist
         try:
             value = float(value)
         except:
-            raise ValidationException(_('%r is not a number.') % (_errstr(value)))
+            _raiseValidationException(_('%r is not a number.') % (_errstr(value)), excMsg)
     elif (_numType == 'num' and '.' not in value):
         # We are expecting a "num" (float or int) type and the user entered an int.
         try:
             value = int(value)
         except:
-            raise ValidationException(_('%r is not a number.') % (_errstr(value)))
+            _raiseValidationException(_('%r is not a number.') % (_errstr(value)), excMsg)
     elif _numType == 'float':
         try:
             value = float(value)
         except:
-            raise ValidationException(_('%r is not a float.') % (_errstr(value)))
+            _raiseValidationException(_('%r is not a float.') % (_errstr(value)), excMsg)
     elif _numType == 'int':
         try:
             if float(value) % 1 != 0:
                 # The number is a float that doesn't end with ".0"
-                raise ValidationException(_('%r is not an integer.') % (_errstr(value)))
+                _raiseValidationException(_('%r is not an integer.') % (_errstr(value)), excMsg)
             value = int(float(value))
         except:
-            raise ValidationException(_('%r is not an integer.') % (_errstr(value)))
+            _raiseValidationException(_('%r is not an integer.') % (_errstr(value)), excMsg)
 
     # Validate against min argument.
     if min is not None and value < min:
-        raise ValidationException(_('Input must be at minimum %s.') % (min))
+        _raiseValidationException(_('Input must be at minimum %s.') % (min), excMsg)
 
     # Validate against max argument.
     if max is not None and value > max:
-        raise ValidationException(_('Input must be at maximum %s.') % (max))
+        _raiseValidationException(_('Input must be at maximum %s.') % (max), excMsg)
 
     # Validate against max argument.
     if lessThan is not None and value >= lessThan:
-        raise ValidationException(_('Input must be less than %s.') % (lessThan))
+        _raiseValidationException(_('Input must be less than %s.') % (lessThan), excMsg)
 
     # Validate against max argument.
     if greaterThan is not None and value <= greaterThan:
-        raise ValidationException(_('Input must be greater than %s.') % (greaterThan))
+        _raiseValidationException(_('Input must be greater than %s.') % (greaterThan), excMsg)
 
     return value
 
 
 def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                min=None, max=None, lessThan=None, greaterThan=None):
+                min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
     """Returns an int of value if it passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -329,7 +339,7 @@ def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
     >>> import pysimplevalidate as pysv
     >>> pysv.validateInt('42')
-    True
+    42
     >>> pysv.validateInt('forty two')
     Traceback (most recent call last):
         ...
@@ -341,7 +351,7 @@ def validateInt(value, blank=False, strip=True, whitelistRegexes=None, blacklist
 
 
 def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                min=None, max=None, lessThan=None, greaterThan=None):
+                min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
     """Returns a float of value if it passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -364,7 +374,7 @@ def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blackli
     >>> import pysimplevalidate as pysv
 
     >>> pysv.validateFloat('3.14')
-    True
+    3.14
 
     >>> pysv.validateFloat('pi')
     Traceback (most recent call last):
@@ -372,10 +382,10 @@ def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blackli
     pysimplevalidate.ValidationException: 'pi' is not a float.
 
     >>> pysv.validateFloat('3')
-    True
+    3.0
 
     >>> pysv.validateFloat('3', min=3)
-    True
+    3.0
 
     >>> pysv.validateFloat('3', greaterThan=3)
     Traceback (most recent call last):
@@ -391,7 +401,7 @@ def validateFloat(value, blank=False, strip=True, whitelistRegexes=None, blackli
 
 
 def _validateParamsFor_validateChoice(choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                   numbered=False, lettered=False, caseSensitive=False):
+                   numbered=False, lettered=False, caseSensitive=False, excMsg=None):
     """Raises an exception if the arguments are invalid. This is called by
     the validateChoice() function to check its arguments. This code was
     refactored out to a separate function so that the PyInputPlus module (or
@@ -429,7 +439,7 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, whitelis
 
 
 def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                   numbered=False, lettered=False, caseSensitive=False):
+                   numbered=False, lettered=False, caseSensitive=False, excMsg=None):
     """Returns the selected choice if it's one of the values in `choices`. Raises
     an exception if ValidationException if value fails validation.
 
@@ -485,7 +495,7 @@ def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=Non
         # `blank` needs to be set to True here, otherwise '' won't be accepted as a choice.
         blank = True
 
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
@@ -502,10 +512,10 @@ def validateChoice(value, choices, blank=False, strip=True, whitelistRegexes=Non
         # Return the original item in choices that value has a case-insensitive match with.
         return choices[[choice.upper() for choice in choices].index(value.upper())]
 
-    raise ValidationException(_('%r is not a valid choice.') % (_errstr(value)))
+    _raiseValidationException(_('%r is not a valid choice.') % (_errstr(value)), excMsg)
 
 
-def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
     if formats is None:
         raise PySimpleValidateException('formats parameter must be specified')
@@ -525,11 +535,11 @@ def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=Tru
             raise PySimpleValidateException('formats argument contains invalid strftime format strings')
 
 
-def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
     # Validate parameters.
     _validateParamsFor__validateToDateTimeFormat(formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
@@ -540,11 +550,11 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, whitelist
         except ValueError:
             continue # If this format fails to parse, move on to the next format.
 
-    raise ValidationException(_('%r is not a valid time') % (value))
+    _raiseValidationException(_('%r is not a valid time.') % (value), excMsg)
 
 
 def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                 formats=('%H:%M:%S', '%H:%M', '%X')):
+                 formats=('%H:%M:%S', '%H:%M', '%X'), excMsg=None):
     """Returns True if value is a time that passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -564,11 +574,11 @@ def validateTime(value, blank=False, strip=True, whitelistRegexes=None, blacklis
         dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
         return datetime.time(dt.hour, dt.minute, dt.second, dt.microsecond)
     except ValidationException:
-        raise ValidationException(_('%r is not a valid time that follows the formats argument') % (_errstr(value)))
+        _raiseValidationException(_('%r is not a valid time that follows the formats argument.') % (_errstr(value)), excMsg)
 
 
 def validateDate(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
-                 formats=('%Y/%m/%d', '%y/%m/%d', '%m/%d/%Y', '%m/%d/%y', '%x')):
+                 formats=('%Y/%m/%d', '%y/%m/%d', '%m/%d/%Y', '%m/%d/%y', '%x'), excMsg=None):
     """Returns True if value is a date that passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -585,13 +595,13 @@ def validateDate(value, blank=False, strip=True, whitelistRegexes=None, blacklis
         dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
         return datetime.date(dt.year, dt.month, dt.day)
     except ValidationException:
-        raise ValidationException(_('%r is not a valid date that follows the formats argument') % (_errstr(value)))
+        _raiseValidationException(_('%r is not a valid date that follows the formats argument.') % (_errstr(value)), excMsg)
 
 
 def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None,
                      formats=('%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S',
                               '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%x %H:%M',
-                              '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S')):
+                              '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S'), excMsg=None):
     """Returns True if value is a datetime that passes validation. Raises an
     exception if ValidationException if value fails validation.
 
@@ -608,7 +618,7 @@ def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blac
     try:
         return _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
     except ValidationException:
-        raise ValidationException(_('%r is not a valid date and time that follows the formats argument') % (_errstr(value)))
+        _raiseValidationException(_('%r is not a valid date and time that follows the formats argument.') % (_errstr(value)), excMsg)
 
 
 
@@ -616,10 +626,10 @@ def validateDatetime(value, blank=False, strip=True, whitelistRegexes=None, blac
 
 # TODO: The rest of these functions are under development.
 
-def validateFilename(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, mustExist=False):
+def validateFilename(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, mustExist=False, excMsg=None):
     # TODO - finish this.
     if value.endswith(' '):
-        raise ValidationException(_('%r is not a valid filename because it ends with a space.') % (_errstr(value)))
+        _raiseValidationException(_('%r is not a valid filename because it ends with a space.') % (_errstr(value)), excMsg)
     raise NotImplementedError()
 
 
@@ -628,69 +638,69 @@ def validateFilepath(value, blank=False, strip=True, whitelistRegexes=None, blac
     raise NotImplementedError()
 
 
-def validateIpAddr(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def validateIp(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+    # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
+    if returnNow:
+        return value
+
     # Reuse the logic in validateRegex()
     try:
         if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
-            return True
+            return value
         if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
-            return True
+            return value
     except ValidationException:
-        raise ValidationException(_('%r is not a valid IP address.') % (_errstr(value)))
+        _raiseValidationException(_('%r is not a valid IP address.') % (_errstr(value)), excMsg)
 
 
-def _validateParamsFor_validateRegex(blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+    # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-
-def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
-    # Validate parameters.
-    _validateParamsFor_validateRegex(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
-
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
-    if re.compile(regex, flags).search(value) is not None:
-        return True
+    mo = re.compile(regex, flags).search(value)
+    if mo is not None:
+        return mo.group(0)
     else:
-        raise ValidationException(_('%r does not match the specified pattern.') % (_errstr(value)))
+        _raiseValidationException(_('%r does not match the specified pattern.') % (_errstr(value)), excMsg)
 
 
-def _validateParamsFor_validateLiteralRegex(blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def validateRegexStr(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+    # TODO - I'd be nice to check regexes in other languages, i.e. JS and Perl.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-
-def validateLiteralRegex(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
-    # TODO - I'd be nice to check regexes in other languages, i.e. JS and Perl.
-    _validateParamsFor_validateRegex(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
-
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
     try:
-        re.compile(value)
+        return re.compile(value)
     except Exception as ex:
-        raise ValidationException(_('%r is not a valid regular expression: %s') % (_errstr(value), ex))
+        _raiseValidationException(_('%r is not a valid regular expression: %s') % (_errstr(value), ex), excMsg)
 
 
-def validateURL(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
+def validateURL(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
     # Reuse the logic in validateRege()
     try:
         if validateRegex(value=value, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
             return True
     except ValidationException:
-        raise ValidationException(_('%r is not a valid URL.') % (value))
+        _raiseValidationException(_('%r is not a valid URL.') % (value), excMsg)
 
 
-def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, yesVal='yes', noVal='no', caseSensitive=False):
+def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, yesVal='yes', noVal='no', caseSensitive=False, excMsg=None):
     # Note: Rather than always return True, this function returns the original `yes` or `no` argument, depending on what `value` represents.
 
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
@@ -703,7 +713,7 @@ def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blackli
     if yesVal == noVal:
         raise PySimpleValidateException('yesVal and noVal arguments must be different.')
 
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
     if returnNow:
         return value
 
@@ -718,7 +728,25 @@ def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blackli
         elif value.upper() in (noVal.upper(), noVal[0].upper()):
             return noVal
 
-    raise ValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yesVal, noVal))
+    _raiseValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yesVal, noVal), excMsg)
+
+
+def validateState(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+    # TODO - note that this is USA-centric
+
+    # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
+    if returnNow:
+        return value
+
+    if value.upper() in STATES_UPPER.keys(): # check if `value` is a state abbreviation
+        return STATES[value.upper()] # It turns out that titlecase is good for all the states.
+    elif value.title() in STATES.values(): # check if `value` is a state name
+        return value.title()
+
+    _raiseValidationException(_('%r is not a state.') % (_errstr(value)), excMsg)
 
 
 def validateName():
@@ -729,66 +757,68 @@ def validateAddress():
     raise NotImplementedError()
 
 
-def validateState(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, caseSensitive=False):
-    # Validate parameters.
-    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
-
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
-    if returnNow:
-        return value
-
-    if caseSensitive:
-        if value in STATES:
-            return True
-    else:
-        if value.upper() in STATES_UPPER:
-            return True
-
-    raise ValidationException(_('%r is not a state.') % (_errstr(value)))
-
-
-def validateZipCode(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None):
-    # Validate parameters.
-    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
-
-    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes)
-    if returnNow:
-        return value
-
-    try:
-        int(value)
-    except ValueError:
-        raise ValidationException(_('%r is not a zip code.') % (value))
-
-    if 100 < int(value) < 99999:
-        return True
-    else:
-        raise ValidationException(_('%r is not a zip code.') % (value))
-
-
 def validatePhone():
     raise NotImplementedError()
 
 
-def validateMonth(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, caseSensitive=False,
-                  monthNames=MONTHS):
-    # TODO - accept abbreviated forms and numbered months as well.
-    raise NotImplementedError()
+def validateMonth(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, monthNames=MONTHS, excMsg=None):
+
+    # returns full month name, e.g. 'January'
+
+    # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
+    if returnNow:
+        return value
 
 
-def validateDayOfWeek():
+    try:
+        if (monthNames == MONTHS) and (1 <= int(value) <= 12): # This check here only applies to months, not when validateDayOfWeek() calls this function.
+            return MONTH_NAMES[int(value) - 1]
+    except:
+        pass # continue if the user didn't enter a number 1 to 12.
+
+    # Both month names and month abbreviations will be at least 3 characters.
+    if len(value) < 3:
+        _raiseValidationException(_('%r is not a month.') % (_errstr(value)), excMsg)
+
+    if value[:3].upper() in monthNames.keys(): # check if `value` is a month abbreviation
+        return monthNames[value[:3].upper()] # It turns out that titlecase is good for all the month.
+    elif value.upper() in monthNames.values(): # check if `value` is a month name
+        return value.title()
+
+    _raiseValidationException(_('%r is not a month.') % (_errstr(value)), excMsg)
+
+
+def validateDayOfWeek(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, dayNames=DAYS_OF_WEEK, excMsg=None):
     # TODO - reuse validateChoice for this function
-    raise NotImplementedError()
+
+    # returns full day of the week str, e.g. 'Sunday'
+
+    # Reuses validateMonth.
+    try:
+        return validateMonth(value, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes, monthNames=DAYS_OF_WEEK)
+    except:
+        # Replace the exception message.
+        _raiseValidationException(_('%r is not a day of the week') % (_errstr(value)), excMsg)
 
 
-def validateDayOfMonth():
-    # TODO - reuse validateChoice for this function
-    raise NotImplementedError()
+def validateDayOfMonth(value, year, month, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+    try:
+        daysInMonth = calendar.monthrange(year, month)[1]
+    except:
+        raise PySimpleValidateException('invalid arguments for year and/or month')
+
+    try:
+        return validateInt(value, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes, min=1, max=daysInMonth)
+    except:
+        # Replace the exception message.
+        _raiseValidationException(_('%r is not a day in the month of %s %s') % (_errstr(value), MONTH_NAMES[month], year), excMsg)
 
 
-def validateYear():
-    # TODO - reuse validateInt for this function
-    raise NotImplementedError()
+
+
 
 if __name__ == '__main__':
     import doctest

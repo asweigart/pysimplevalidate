@@ -233,20 +233,21 @@ def test_validateRegex():
     assert pysv.validateRegex('cat 123', r'\d+')
 
 
-def test_validateLiteralRegex():
+def test_validateRegexStr():
     # Test typical usage.
-    pysv.validateLiteralRegex(r'\w+')
+    pysv.validateRegexStr(r'\w+')
 
 
     with pytest.raises(pysv.ValidationException):
-        pysv.validateLiteralRegex(r'(')
+        pysv.validateRegexStr(r'(')
 
 
-def test_validateIpAddr():
+def test_validateIp():
     # Test typical usage.
-    assert pysv.validateIpAddr('127.0.0.1')
-    assert pysv.validateIpAddr('255.255.255.255')
-    assert pysv.validateIpAddr('300.255.255.255')
+    assert pysv.validateIp('127.0.0.1')
+    assert pysv.validateIp('255.255.255.255')
+    assert pysv.validateIp('300.255.255.255')
+
 
 def test_validateYesNo():
     # Test typical usage.
@@ -293,15 +294,6 @@ def test_validateState():
     # Test typical failure cases.
     with pytest.raises(pysv.ValidationException):
         pysv.validateState('gas')
-
-
-def test_validateZipCode():
-    # Test typical usage.
-    assert pysv.validateZipCode('94105')
-
-    # Test typical failure cases.
-    with pytest.raises(pysv.ValidationException, message="'XXX' is not a zip code."):
-        pysv.validateZipCode('XXX')
 
 
 def test__validateParamsFor_validateChoice():
