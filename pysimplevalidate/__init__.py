@@ -144,6 +144,8 @@ def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes,
     This function is called by the validate*() functions to perform some common
     housekeeping."""
 
+    # TODO - add a whitelistFirst and blacklistFirst to determine which is checked first. (Right now it's whitelist)
+
     value = str(value)
 
     # Optionally strip whitespace or other characters from value.
@@ -238,6 +240,14 @@ def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterTha
                       ('lessThan', lessThan), ('greaterThan', greaterThan)):
         if not isinstance(val, (int, float, type(None))):
             raise PySimpleValidateException(name + ' argument must be int, float, or NoneType')
+
+
+def validateStr(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+    # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=None, blacklistRegexes=blacklistRegexes)
+    returnNow, value = _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg)
+
+    return value
 
 
 def validateNum(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, _numType='num',
@@ -656,7 +666,7 @@ def validateIp(value, blank=False, strip=True, whitelistRegexes=None, blacklistR
         _raiseValidationException(_('%r is not a valid IP address.') % (_errstr(value)), excMsg)
 
 
-def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
+def validateRegex(value, regex, flags=0, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
 
@@ -666,7 +676,7 @@ def validateRegex(value, regex='', flags=0, blank=False, strip=True, whitelistRe
 
     mo = re.compile(regex, flags).search(value)
     if mo is not None:
-        return mo.group(0)
+        return mo.group()
     else:
         _raiseValidationException(_('%r does not match the specified pattern.') % (_errstr(value)), excMsg)
 
@@ -688,8 +698,9 @@ def validateRegexStr(value, blank=False, strip=True, whitelistRegexes=None, blac
 def validateURL(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
     # Reuse the logic in validateRege()
     try:
-        if validateRegex(value=value, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes):
-            return True
+        result = validateRegex(value=value, regex=URL_REGEX, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes)
+        if result is not None:
+            return result
     except ValidationException:
         _raiseValidationException(_('%r is not a valid URL.') % (value), excMsg)
 
@@ -729,6 +740,28 @@ def validateYesNo(value, blank=False, strip=True, whitelistRegexes=None, blackli
             return noVal
 
     _raiseValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yesVal, noVal), excMsg)
+
+
+def validateBool(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, trueVal='True', falseVal='False', caseSensitive=False, excMsg=None):
+    # Replace the exception messages used in validateYesNo():
+    trueVal = str(trueVal)
+    falseVal = str(falseVal)
+    if len(trueVal) == 0:
+        raise PySimpleValidateException('trueVal argument must be a non-empty string.')
+    if len(falseVal) == 0:
+        raise PySimpleValidateException('falseVal argument must be a non-empty string.')
+    if trueVal == falseVal:
+        raise PySimpleValidateException('trueVal and falseVal arguments must be different.')
+
+    result = validateYesNo(value, blank=blank, strip=strip, whitelistRegexes=whitelistRegexes, blacklistRegexes=blacklistRegexes, yesVal=trueVal, noVal=falseVal, caseSensitive=caseSensitive, excMsg=None)
+
+    # Return a bool value instead of a string.
+    if result == trueVal:
+        return True
+    elif result == falseVal:
+        return False
+    else:
+        return result # Return `result` if a blank or whitelisted value was entered, or postValidateApplyFunc() transformed the value.
 
 
 def validateState(value, blank=False, strip=True, whitelistRegexes=None, blacklistRegexes=None, excMsg=None):
