@@ -50,7 +50,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.1.0'
+__version__ = '0.1.3'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
@@ -129,14 +129,14 @@ def _getStrippedValue(value, strip=True):
     return value
 
 
-def _raiseValidationException(excMsg, customExcMsg=None):
+def _raiseValidationException(standardExcMsg, customExcMsg=None):
     if customExcMsg is None:
-        raise ValidationException(str(excMsg))
+        raise ValidationException(str(standardExcMsg))
     else:
         raise ValidationException(str(customExcMsg))
 
 
-def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg):
+def _prevalidationCheck(value, blank, strip, whitelistRegexes, blacklistRegexes, excMsg=None):
     """Returns a tuple of two values: the first is a bool that tells the caller
     if they should immediately return True, the second is a new, possibly stripped
     value for the calling validation function's `value` parameter.

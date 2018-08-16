@@ -5,11 +5,11 @@ A collection of string-based validation functions, suitable for use in other Pyt
 Pass a string to these validation functions, which raise ValidationException if validation fails. Otherwise they return a platonic value of the validated string (i.e. the `validateInt('42')` returns the int `42`).
 
 
-
 Installation
 ============
 
     pip install pysimplevalidate
+
 
 Example Usage
 =============
@@ -144,6 +144,7 @@ Example Usage
     Traceback (most recent call last):
         ...
     pysimplevalidate.ValidationException: '29' is not a day in the month of March 1921
+
 
 Common Validaton Function Parameters
 ====================================
