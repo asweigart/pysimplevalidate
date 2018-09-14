@@ -50,7 +50,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.1.3'
+__version__ = '0.2.0'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
