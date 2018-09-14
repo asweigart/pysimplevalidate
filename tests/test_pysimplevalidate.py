@@ -24,29 +24,29 @@ def test__errstr():
 
 
 def test__validateGenericParameters():
-    # Test typical whitelist arguments.
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=[], blacklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=['valid'], blacklistRegexes=None) is None
+    # Test typical allowlist arguments.
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=[], blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=['valid'], blocklistRegexes=None) is None
 
-    # Test typical blacklist arguments.
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=[]) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=['x']) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=[('x', 'x')]) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=[('x', 'x'), ('x', 'x')]) is None
+    # Test typical blocklist arguments.
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=['x']) is None
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[('x', 'x')]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[('x', 'x'), ('x', 'x')]) is None
 
     # Test invalid blank argument.
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=None, strip=True, whitelistRegexes=None, blacklistRegexes=[])
+        pysv._validateGenericParameters(blank=None, strip=True, allowlistRegexes=None, blocklistRegexes=[])
 
-    # Test invalid blacklist arguments.
+    # Test invalid blocklist arguments.
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=42)
+        pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=42)
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=[('x', 42)])
+        pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[('x', 42)])
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=True, whitelistRegexes=None, blacklistRegexes=[(42, 'x')])
+        pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[(42, 'x')])
 
 
 def test_validateNum():
@@ -85,7 +85,7 @@ def test_validateNum():
     with pytest.raises(pysv.ValidationException, message="' ' is not a number."):
         pysv.validateNum(' ', blank=True, strip=False, _numType='num')
 
-    # TODO - need to test strip, blacklistRegexes
+    # TODO - need to test strip, blocklistRegexes
 
 def test_validateInt():
     # Test typical usage.
