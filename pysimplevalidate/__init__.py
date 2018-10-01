@@ -50,7 +50,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
@@ -141,6 +141,10 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
     if they should immediately return True, the second is a new, possibly stripped
     value for the calling validation function's `value` parameter.
 
+    We'd want the caller immediately return `value` in some cases where further
+    validation isn't needed, such as if `value` is blank and blanks are
+    allowed, or if `value` matches an allowlist or blocklist regex.
+
     This function is called by the validate*() functions to perform some common
     housekeeping."""
 
@@ -156,13 +160,13 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
         # value is blank but blanks aren't allowed.
         _raiseValidationException(_('Blank values are not allowed.'), excMsg)
     elif blank and value == '':
-        return True, value
+        return True, value # The value is blank and blanks are allowed, so return True to indicate that the caller should return value immediately.
 
     # Check the allowlistRegexes.
     if allowlistRegexes is not None:
         for regex in allowlistRegexes:
             if re.search(regex, value) is not None:
-                return True, value
+                return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
 
     # Check the blocklistRegexes.
     if blocklistRegexes is not None:
@@ -175,7 +179,7 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
             if re.search(regex, value) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
 
-    return False, value
+    return False, value # Return False and the possibly modified `value`, and leave it up to the caller to decide if it's valid or not.
 
 
 def _validateGenericParameters(blank, strip, allowlistRegexes, blocklistRegexes):
@@ -257,6 +261,10 @@ def validateNum(value, blank=False, strip=True, allowlistRegexes=None, blocklist
 
     The value can pass validation if it is a number, either int or float.
 
+    Note that since `int()` and `float()` ignore leading or trailing whitespace
+    when converting a string to a number, so does this `validateNum()`. Passing
+    `strip=None` has the same effect as `strip=True`.
+
     Args:
         value (str): The value being validated as a number.
         blank (bool): If False, a blank string for value will be accepted.
@@ -278,7 +286,18 @@ def validateNum(value, blank=False, strip=True, allowlistRegexes=None, blocklist
 
     returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
     if returnNow:
-        return value
+        # If we can convert value to an int/float, then do so. For example,
+        # if an allowlist regex allows '42', then we should return 42/42.0.
+        if (_numType == 'num' and '.' in value) or (_numType == 'float'):
+            try:
+                return float(value)
+            except ValueError:
+                return value # Return the value as is.
+        if (_numType == 'num' and '.' not in value) or (_numType == 'int'):
+            try:
+                return int(value)
+            except ValueError:
+                return value # Return the value as is.
 
     # Validate the value's type (and convert value back to a number type).
     if (_numType == 'num' and '.' in value):
@@ -551,7 +570,11 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, allowlist
 
     returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
     if returnNow:
-        return value
+        # If value can be converted to a datetime object, convert it.
+        try:
+            return datetime.datetime.strptime(value, format)
+        except ValueError:
+            return value # Return the value as is.
 
     # Validate against the given formats.
     for format in formats:
