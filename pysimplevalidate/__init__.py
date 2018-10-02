@@ -50,7 +50,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
@@ -78,6 +78,9 @@ fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|     # fe80::7:8%eth0   fe80::7:8%
 )""", re.VERBOSE)
 
 URL_REGEX = re.compile(r"""(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)""")
+
+# https://emailregex.com/
+EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
 STATES = {'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'} # TODO - make STATES a dictionary mapping abbreviation to full name
 STATES_UPPER = dict([(abbrev, STATES[abbrev].upper()) for abbrev in STATES.keys()])
@@ -719,13 +722,23 @@ def validateRegexStr(value, blank=False, strip=True, allowlistRegexes=None, bloc
 
 
 def validateURL(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
-    # Reuse the logic in validateRege()
+    # Reuse the logic in validateRegex()
     try:
         result = validateRegex(value=value, regex=URL_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
         if result is not None:
             return result
     except ValidationException:
         _raiseValidationException(_('%r is not a valid URL.') % (value), excMsg)
+
+
+def validateEmail(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    # Reuse the logic in validateRegex()
+    try:
+        result = validateRegex(value=value, regex=EMAIL_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
+        if result is not None:
+            return result
+    except ValidationException:
+        _raiseValidationException(_('%r is not a valid email address.') % (value), excMsg)
 
 
 def validateYesNo(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, yesVal='yes', noVal='no', caseSensitive=False, excMsg=None):
