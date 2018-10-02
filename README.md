@@ -55,7 +55,7 @@ Example Usage
     >>> pysv.validateNum(4, greaterThan=2, lessThan=4)
     Traceback (most recent call last):
         ...
-    pysimplevalidate.ValidationException: Input must be less than 4.
+    pysimplevalidate.ValidationException: Number must be less than 4.
 
     >>> pysv.validateInt(4.0)
     4

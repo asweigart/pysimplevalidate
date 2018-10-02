@@ -50,7 +50,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
@@ -328,19 +328,19 @@ def validateNum(value, blank=False, strip=True, allowlistRegexes=None, blocklist
 
     # Validate against min argument.
     if min is not None and value < min:
-        _raiseValidationException(_('Input must be at minimum %s.') % (min), excMsg)
+        _raiseValidationException(_('Number must be at minimum %s.') % (min), excMsg)
 
     # Validate against max argument.
     if max is not None and value > max:
-        _raiseValidationException(_('Input must be at maximum %s.') % (max), excMsg)
+        _raiseValidationException(_('Number must be at maximum %s.') % (max), excMsg)
 
     # Validate against max argument.
     if lessThan is not None and value >= lessThan:
-        _raiseValidationException(_('Input must be less than %s.') % (lessThan), excMsg)
+        _raiseValidationException(_('Number must be less than %s.') % (lessThan), excMsg)
 
     # Validate against max argument.
     if greaterThan is not None and value <= greaterThan:
-        _raiseValidationException(_('Input must be greater than %s.') % (greaterThan), excMsg)
+        _raiseValidationException(_('Number must be greater than %s.') % (greaterThan), excMsg)
 
     return value
 
@@ -419,7 +419,7 @@ def validateFloat(value, blank=False, strip=True, allowlistRegexes=None, blockli
     >>> pysv.validateFloat('3', greaterThan=3)
     Traceback (most recent call last):
         ...
-    pysimplevalidate.ValidationException: Input must be greater than 3.
+    pysimplevalidate.ValidationException: Number must be greater than 3.
     """
 
     # TODO: Accept "e" formatted numbers, like 1.0000000000000001e-48.
