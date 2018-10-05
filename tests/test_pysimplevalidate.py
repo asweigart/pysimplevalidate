@@ -1,10 +1,8 @@
-import os
-import sys
+import datetime
 
 import pytest
 # NOTE: PySimpleValidate tests using PyTest 3.6.3. Doesn't support versions before 3.0.
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pysimplevalidate as pysv
 
 
@@ -184,12 +182,12 @@ def test_validateDate():
 
 def test_validateTime():
     # Test typical usage.
-    assert pysv.validateTime('00:00')
-    assert pysv.validateTime('12:00')
-    assert pysv.validateTime('7:00')
-    assert pysv.validateTime('00:00:00')
-    assert pysv.validateTime('12:00:00')
-    assert pysv.validateTime('7:00:00')
+    assert pysv.validateTime('00:00') == datetime.time(0, 0)
+    assert pysv.validateTime('12:00') == datetime.time(12, 0)
+    assert pysv.validateTime('7:00') == datetime.time(7, 0)
+    assert pysv.validateTime('00:00:00') == datetime.time(0, 0, 0)
+    assert pysv.validateTime('12:00:00') == datetime.time(12, 0, 0)
+    assert pysv.validateTime('7:00:00') == datetime.time(7, 0, 0)
 
     # Test for typical validation failure.
     with pytest.raises(pysv.ValidationException): #, message="'25:00' is not a valid time."):
