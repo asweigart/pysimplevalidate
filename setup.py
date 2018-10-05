@@ -1,14 +1,19 @@
+from setuptools import setup, find_packages
+import os
 import re
-from setuptools import setup
 
 # Load version from module (without loading the whole module)
-with open('pysimplevalidate/__init__.py', 'r') as fd:
+with open('src/shortstr/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         fd.read(), re.MULTILINE).group(1)
 
-# Read in the README.md for the long description.
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+here = os.path.abspath(os.path.dirname(__file__))
+
+# Get the long description from the README file
+with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
+
+
 
 
 setup(
@@ -20,7 +25,8 @@ setup(
     description=('A collection of string-based validation functions, suitable for use in other Python 2 and 3 applications.'),
     long_description=long_description,
     license='BSD',
-    packages=['pysimplevalidate'],
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     test_suite='tests',
     install_requires=[],
     keywords="input validation text string",
