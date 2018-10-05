@@ -1,34 +1,18 @@
-.. PySimpleValidate documentation master file, created by
-   sphinx-quickstart on Tue Oct  2 19:28:00 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+pysimplevalidate
+================
 
-Welcome to PySimpleValidate's documentation!
-============================================
+A collection of string-based validation functions, suitable for use in other Python 2 and 3 applications.
 
-A pure-Python module for doing common input validation for Python 2 and 3.
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   api
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+Pass a string to these validation functions, which raise ValidationException if validation fails. Otherwise they return a platonic value of the validated string (i.e. the `validateInt('42')` returns the int `42`).
 
 
 Installation
-============
+------------
 
     pip install pysimplevalidate
 
 About
-=====
+-----
 
 PySimpleValidate provides several functions to perform common input validation.
 The validate* functions in this module accept a *value* argument and raise a
@@ -71,7 +55,7 @@ Further, the text-based validators have the following common parameters:
 * caseSensitive (bool): If True, value must match the exact casing of an acceptable response. If False, any casing can be used. Defaults to False.
 
 Quickstart
-==========
+----------
 
 PySimpleValidate's validation functions will raise *ValidationException* if
 the value passed to them fails validation. Otherwise, a cleaned up version of

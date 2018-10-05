@@ -3,14 +3,14 @@ import os
 import re
 
 # Load version from module (without loading the whole module)
-with open('src/shortstr/__init__.py', 'r') as fd:
+with open('src/pysimplevalidate/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         fd.read(), re.MULTILINE).group(1)
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the README file
-with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
 
