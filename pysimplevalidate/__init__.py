@@ -1,47 +1,6 @@
-"""PySimpleValidate
-By Al Sweigart al@inventwithpython.com
+# PySimpleValidate
+# By Al Sweigart al@inventwithpython.com
 
-The validate* functions in this module accept a `value` argument and raise a
-`ValidationException` if it doesn't pass validation.
-
-If `value` was valid, the function returns. The return value is the form of
-the value that the validation function has accepted as value. This could
-include any transformations such as stripping whitespace from the ends.
-If the validation function returns because the value validates against one of
-the allowlist regexes, the value is returned.
-
-The following (hopefully self-descriptive) validation functions are implemented
-in this module:
-
-* `validateNum()`
-* `validateInt()`
-* `validateFloat()`
-* `validateChoice()`
-* `validateDate()`
-* `validateTime()`
-* `validateDatetime()`
-* `validateRegex()`
-* `validateRegexStr()`
-* `validateURL()`
-* `validateYesNo()`
-* `validateState
-* `validateMonth()`
-* `validateDayOfWeek()`
-* `validateDayOfMonth()`
-
-These validation functions have the following common parameters:
-
-* `value` (str): The value being validated as a number.
-* `blank` (bool): If `False`, a blank string for value will be accepted. Defaults to `False`.
-* `strip` (bool, str, None): If `True`, whitespace is stripped from `value`. If a str, the characters in it are stripped from value. If `None`, nothing is stripped. Defaults to `True`.
-* `allowlistRegexes` (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers. Defaults to `None`.
-* `blocklistRegexes` (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation. Defaults to `None`.
-
-Further, the text-based validators have the following common parameters:
-
-* `caseSensitive` (bool): If `True`, `value` must match the exact casing of an acceptable response. If `False`, any casing can be used. Defaults to `False`.
-
-"""
 
 from __future__ import absolute_import, division, print_function
 
@@ -56,6 +15,8 @@ MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
 # From https://stackoverflow.com/a/5284410/1893164
 IPV4_REGEX = re.compile(r"""((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}""")
+
+REGEX_TYPE = type(IPV4_REGEX)
 
 # From https://stackoverflow.com/a/17871737/1893164
 IPV6_REGEX = re.compile(r"""(
@@ -82,21 +43,22 @@ URL_REGEX = re.compile(r"""(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256
 # https://emailregex.com/
 EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
-STATES = {'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'} # TODO - make STATES a dictionary mapping abbreviation to full name
-STATES_UPPER = dict([(abbrev, STATES[abbrev].upper()) for abbrev in STATES.keys()])
+USA_STATES = {'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'} # TODO - make STATES a dictionary mapping abbreviation to full name
+USA_STATES_REVERSED = dict([(USA_STATES[abbrev], abbrev) for abbrev in USA_STATES.keys()])
+USA_STATES_UPPER = dict([(abbrev, USA_STATES[abbrev].upper()) for abbrev in USA_STATES.keys()])
 
-MONTHS = {'JAN': 'January', 'FEB': 'February', 'MAR': 'March', 'APR': 'April', 'MAY': 'May', 'JUN': 'June', 'JUL': 'July', 'AUG': 'August', 'SEP': 'September', 'OCT': 'October', 'NOV': 'November', 'DEC': 'December'}
+ENGLISH_MONTHS = {'JAN': 'January', 'FEB': 'February', 'MAR': 'March', 'APR': 'April', 'MAY': 'May', 'JUN': 'June', 'JUL': 'July', 'AUG': 'August', 'SEP': 'September', 'OCT': 'October', 'NOV': 'November', 'DEC': 'December'}
 
-MONTH_NAMES = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+ENGLISH_MONTH_NAMES = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
 
-DAYS_OF_WEEK = {'SUN': 'Sunday', 'MON': 'Monday', 'TUE': 'Tuesday', 'WED': 'Wednesday', 'THU': 'Thursday', 'FRI': 'Friday', 'SAT': 'Saturday'}
+ENGLISH_DAYS_OF_WEEK = {'SUN': 'Sunday', 'MON': 'Monday', 'TUE': 'Tuesday', 'WED': 'Wednesday', 'THU': 'Thursday', 'FRI': 'Friday', 'SAT': 'Saturday'}
 
 DEFAULT_BLOCKLIST_RESPONSE = 'This response is invalid.'
 
 
 class PySimpleValidateException(Exception):
-    '''Base class for exceptions raised when PySimpleValidate functions are
-    misused. This doesn't represent a validation failure.'''
+    """Base class for exceptions raised when PySimpleValidate functions are misused.
+    This doesn't represent a validation failure."""
     pass
 
 
@@ -106,13 +68,15 @@ class ValidationException(Exception):
 
 
 def _(s):
-    '''This _() function is a stub for implementing gettext and I18N for PySimpleValidate.'''
+    """This function is a stub for implementing gettext and I18N for PySimpleValidate."""
     return s
 
 
 def _errstr(value):
-    """Returns the value str, truncated to MAX_ERROR_STR_LEN characters. If it's
-    truncated, the returned value will have '...' on the end."""
+    """Returns the value str, truncated to MAX_ERROR_STR_LEN characters. If
+    it's truncated, the returned value will have '...' on the end.
+    """
+
     value = str(value) # We won't make the caller convert value to a string each time.
     if len(value) > MAX_ERROR_STR_LEN:
         return value[:MAX_ERROR_STR_LEN] + '...'
@@ -120,19 +84,26 @@ def _errstr(value):
         return value
 
 
-def _getStrippedValue(value, strip=True):
-    """Like the strip() str method, except the strip argument describes different behavior:
-    If the strip argument is the Boolean True value, whitespace is stripped.
-    If the strip argument is a string, the characters in the string are stripped.
-    If the strip argument is None, nothing is stripped."""
-    if strip is True:
+def _getStrippedValue(value, strip):
+    """Like the strip() string method, except the strip argument describes
+    different behavior:
+
+    If strip is None, whitespace is stripped.
+
+    If strip is a string, the characters in the string are stripped.
+
+    If strip is False, nothing is stripped."""
+    if strip is None:
         value = value.strip() # Call strip() with no arguments to strip whitespace.
     elif isinstance(strip, str):
         value = value.strip(strip) # Call strip(), passing the strip argument.
+    elif strip is False:
+        pass # Don't strip anything.
     return value
 
 
 def _raiseValidationException(standardExcMsg, customExcMsg=None):
+    """Raise ValidationException with standardExcMsg, unless customExcMsg is specified."""
     if customExcMsg is None:
         raise ValidationException(str(standardExcMsg))
     else:
@@ -142,11 +113,11 @@ def _raiseValidationException(standardExcMsg, customExcMsg=None):
 def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg=None):
     """Returns a tuple of two values: the first is a bool that tells the caller
     if they should immediately return True, the second is a new, possibly stripped
-    value for the calling validation function's `value` parameter.
+    value to replace the value passed for value parameter.
 
-    We'd want the caller immediately return `value` in some cases where further
-    validation isn't needed, such as if `value` is blank and blanks are
-    allowed, or if `value` matches an allowlist or blocklist regex.
+    We'd want the caller immediately return value in some cases where further
+    validation isn't needed, such as if value is blank and blanks are
+    allowed, or if value matches an allowlist or blocklist regex.
 
     This function is called by the validate*() functions to perform some common
     housekeeping."""
@@ -182,20 +153,23 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
             if re.search(regex, value) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
 
-    return False, value # Return False and the possibly modified `value`, and leave it up to the caller to decide if it's valid or not.
+    return False, value # Return False and the possibly modified value, and leave it up to the caller to decide if it's valid or not.
 
 
 def _validateGenericParameters(blank, strip, allowlistRegexes, blocklistRegexes):
-    """Returns None if the blank, strip, and blocklistRegexes parameters that all
+    """Returns None if the blank, strip, and blocklistRegexes parameters are valid
     of PySimpleValidate's validation functions have. Raises a PySimpleValidateException
     if any of the arguments are invalid."""
 
+    # Check blank parameter.
     if not isinstance(blank, bool):
         raise PySimpleValidateException('blank argument must be a bool')
 
+    # Check strip parameter.
     if not isinstance(strip, (bool, str, type(None))):
         raise PySimpleValidateException('strip argument must be a bool, None, or str')
 
+    # Check allowlistRegexes parameter (including each regex in it).
     if allowlistRegexes is None:
         allowlistRegexes = [] # allowlistRegexes defaults to a blank list.
 
@@ -207,7 +181,10 @@ def _validateGenericParameters(blank, strip, allowlistRegexes, blocklistRegexes)
         if not isinstance(response[0], str):
             raise PySimpleValidateException('allowlistRegexes must be a sequence of regex_strs')
 
-
+    # Check allowlistRegexes parameter (including each regex in it).
+    # NOTE: blocklistRegexes is NOT the same format as allowlistRegex, it can
+    # include an "invalid input reason" string to display if the input matches
+    # the blocklist regex.
     if blocklistRegexes is None:
         blocklistRegexes = [] # blocklistRegexes defaults to a blank list.
 
@@ -226,9 +203,10 @@ def _validateGenericParameters(blank, strip, allowlistRegexes, blocklistRegexes)
 
 def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterThan=None):
     """Raises an exception if the arguments are invalid. This is called by
-    the validateNum(), validateInt(), and validateFloat() functions to check its arguments. This code was
-    refactored out to a separate function so that the PyInputPlus module (or
-    other modules) could check their parameters' arguments for validateChoice
+    the validateNum(), validateInt(), and validateFloat() functions to
+    check its arguments. This code was refactored out to a separate function
+    so that the PyInputPlus module (or other modules) could check their
+    parameters' arguments for inputNum() etc.
     """
 
     if (min is not None) and (greaterThan is not None):
@@ -249,7 +227,47 @@ def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterTha
             raise PySimpleValidateException(name + ' argument must be int, float, or NoneType')
 
 
-def validateStr(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def validateStr(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not a string. This function
+    is identical to the built-in input() function, but also offers the
+    PySimpleValidate features of not allowing blank values by default,
+    automatically stripping whitespace, and having allowlist/blocklist
+    regular expressions.
+
+    Returns value, so it can be used inline in an expression:
+
+        print('Hello, ' + validateStr(your_name))
+
+    * value (str): The value being validated as a string.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateStr('hello')
+    'hello'
+    >>> pysv.validateStr('')
+    Traceback (most recent call last):
+      ...
+    pysimplevalidate.ValidationException: Blank values are not allowed.
+    >>> pysv.validateStr('', blank=True)
+    ''
+    >>> pysv.validateStr('    hello    ')
+    'hello'
+    >>> pysv.validateStr('hello', blocklistRegexes=['hello'])
+    Traceback (most recent call last):
+      ...
+    pysimplevalidate.ValidationException: This response is invalid.
+    >>> pysv.validateStr('hello', blocklistRegexes=[('hello', 'Hello is not allowed')])
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: Hello is not allowed
+    >>> pysv.validateStr('hello', allowlistRegexes=['hello'], blocklistRegexes=['llo'])
+    'hello'
+    """
+
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=None, blocklistRegexes=blocklistRegexes)
     returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
@@ -257,30 +275,49 @@ def validateStr(value, blank=False, strip=True, allowlistRegexes=None, blocklist
     return value
 
 
-def validateNum(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, _numType='num',
+def validateNum(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, _numType='num',
                 min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
-    """Returns an int or float of value if it passes validation. Raises an
-    exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not a float or int.
 
-    The value can pass validation if it is a number, either int or float.
+    Returns value, so it can be used inline in an expression:
 
-    Note that since `int()` and `float()` ignore leading or trailing whitespace
-    when converting a string to a number, so does this `validateNum()`. Passing
-    `strip=None` has the same effect as `strip=True`.
+        print(2 + validateNum(your_number))
 
-    Args:
-        value (str): The value being validated as a number.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
-        min (int, float): The (inclusive) minimum value for the value to pass validation.
-        max (int, float): The (inclusive) maximum value for the value to pass validation.
-        lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
-        greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+    Note that since int() and float() ignore leading or trailing whitespace
+    when converting a string to a number, so does this validateNum().
 
-    If you specify min or max, you cannot also specify lessThan or greaterThan.
+    * value (str): The value being validated as an int or float.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
+    * min (int, float): The (inclusive) minimum value for the value to pass validation.
+    * max (int, float): The (inclusive) maximum value for the value to pass validation.
+    * lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
+    * greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    If you specify min or max, you cannot also respectively specify lessThan
+    or greaterThan. Doing so will raise PySimpleValidateException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateNum('3')
+    3
+    >>> pysv.validateNum('3.0')
+    3.0
+    >>> pysv.validateNum('    3.0    ')
+    3.0
+    >>> pysv.validateNum('549873259847598437598435798435793.589985743957435794357')
+    5.498732598475984e+32
+    >>> pysv.validateNum('4', lessThan=4)
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: Number must be less than 4.
+    >>> pysv.validateNum('4', max=4)
+    4
+    >>> pysv.validateNum('4', min=2, max=5)
+    4
     """
 
     # Validate parameters.
@@ -348,26 +385,31 @@ def validateNum(value, blank=False, strip=True, allowlistRegexes=None, blocklist
     return value
 
 
-def validateInt(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def validateInt(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
-    """Returns an int of value if it passes validation. Raises an
-    exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not a int.
 
-    The value can pass validation if it is an int.
+    Returns value, so it can be used inline in an expression:
 
-    Args:
-        value (str): The value being validated as a number.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
-        min (int, float): The (inclusive) minimum value for the value to pass validation.
-        max (int, float): The (inclusive) maximum value for the value to pass validation.
-        lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
-        greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+        print(2 + validateInt(your_number))
 
-    If you specify min or max, you cannot also specify lessThan or greaterThan.
+    Note that since int() and ignore leading or trailing whitespace
+    when converting a string to a number, so does this validateNum().
+
+    * value (str): The value being validated as an int or float.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
+    * min (int, float): The (inclusive) minimum value for the value to pass validation.
+    * max (int, float): The (inclusive) maximum value for the value to pass validation.
+    * lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
+    * greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    If you specify min or max, you cannot also respectively specify lessThan
+    or greaterThan. Doing so will raise PySimpleValidateException.
 
     >>> import pysimplevalidate as pysv
     >>> pysv.validateInt('42')
@@ -382,26 +424,31 @@ def validateInt(value, blank=False, strip=True, allowlistRegexes=None, blocklist
                        lessThan=lessThan, greaterThan=greaterThan)
 
 
-def validateFloat(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def validateFloat(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
-    """Returns a float of value if it passes validation. Raises an
-    exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not a float.
 
-    The value can pass validation if it is a float.
+    Returns value, so it can be used inline in an expression:
 
-    Args:
-        value (str): The value being validated as a number.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
-        min (int, float): The (inclusive) minimum value for the value to pass validation.
-        max (int, float): The (inclusive) maximum value for the value to pass validation.
-        lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
-        greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+        print(2 + validateFloat(your_number))
 
-    If you specify min or max, you cannot also specify lessThan or greaterThan.
+    Note that since float() ignore leading or trailing whitespace
+    when converting a string to a number, so does this validateNum().
+
+    * value (str): The value being validated as an int or float.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * _numType (str): One of 'num', 'int', or 'float' for the kind of number to validate against, where 'num' means int or float.
+    * min (int, float): The (inclusive) minimum value for the value to pass validation.
+    * max (int, float): The (inclusive) maximum value for the value to pass validation.
+    * lessThan (int, float): The (exclusive) minimum value for the value to pass validation.
+    * greaterThan (int, float): The (exclusive) maximum value for the value to pass validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    If you specify min or max, you cannot also respectively specify lessThan
+    or greaterThan. Doing so will raise PySimpleValidateException.
 
     >>> import pysimplevalidate as pysv
 
@@ -425,19 +472,17 @@ def validateFloat(value, blank=False, strip=True, allowlistRegexes=None, blockli
     pysimplevalidate.ValidationException: Number must be greater than 3.
     """
 
-    # TODO: Accept "e" formatted numbers, like 1.0000000000000001e-48.
-
     return validateNum(value=value, blank=blank, strip=strip, allowlistRegexes=None,
                        blocklistRegexes=blocklistRegexes, _numType='float', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
 
 
-def _validateParamsFor_validateChoice(choices, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def _validateParamsFor_validateChoice(choices, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False, excMsg=None):
-    """Raises an exception if the arguments are invalid. This is called by
+    """Raises PySimpleValidateException if the arguments are invalid. This is called by
     the validateChoice() function to check its arguments. This code was
     refactored out to a separate function so that the PyInputPlus module (or
-    other modules) could check their parameters' arguments for validateChoice
+    other modules) could check their parameters' arguments for inputChoice().
     """
 
     if not isinstance(caseSensitive, bool):
@@ -470,28 +515,36 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=True, allowlis
         raise PySimpleValidateException('duplicate case-insensitive entries in choices argument')
 
 
-def validateChoice(value, choices, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def validateChoice(value, choices, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False, excMsg=None):
-    """Returns the selected choice if it's one of the values in `choices`. Raises
-    an exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not one of the values in
+    choices. Returns the selected choice.
 
-    If `lettered` is `True`, lower or uppercase letters will be accepted regardless
-    of what `caseSensitive` is set to. The `caseSensitive` argumnet only matters
-    for matching with the text of the strings in `choices`.
+    Returns the value in choices that was selected, so it can be used inline
+    in an expression:
 
-    Args:
-        value (str): The value being validated.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        numbered (bool): TODO
-        lettered (bool): TODO
-        caseSensitive (bool): TODO
+        print('You chose ' + validateChoice(your_choice, ['cat', 'dog']))
 
-    Returns the choice selected as it appeared in `choices`. That is, if `'cat'`
-    was a choice and the user entered `'CAT'` while caseSensitive is `False`,
-    this function will return `'cat'`.
+    Note that value itself is not returned: validateChoice('CAT', ['cat', 'dog'])
+    will return 'cat', not 'CAT'.
+
+    If lettered is True, lower or uppercase letters will be accepted regardless
+    of what caseSensitive is set to. The caseSensitive argument only matters
+    for matching with the text of the strings in choices.
+
+    * value (str): The value being validated.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * numbered (bool): If True, this function will also accept a string of the choice's number, i.e. '1' or '2'.
+    * lettered (bool): If True, this function will also accept a string of the choice's letter, i.e. 'A' or 'B' or 'a' or 'b'.
+    * caseSensitive (bool): If True, then the exact case of the option must be entered.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    Returns the choice selected as it appeared in choices. That is, if 'cat'
+    was a choice and the user entered 'CAT' while caseSensitive is False,
+    this function will return 'cat'.
 
 
     >>> import pysimplevalidate as pysv
@@ -524,7 +577,7 @@ def validateChoice(value, choices, blank=False, strip=True, allowlistRegexes=Non
         blocklistRegexes=blocklistRegexes, numbered=numbered, lettered=lettered, caseSensitive=caseSensitive)
 
     if '' in choices:
-        # `blank` needs to be set to True here, otherwise '' won't be accepted as a choice.
+        # blank needs to be set to True here, otherwise '' won't be accepted as a choice.
         blank = True
 
     returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
@@ -547,7 +600,12 @@ def validateChoice(value, choices, blank=False, strip=True, allowlistRegexes=Non
     _raiseValidationException(_('%r is not a valid choice.') % (_errstr(value)), excMsg)
 
 
-def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises PySimpleValidateException if the arguments are invalid. This is called by
+    the validateTime() function to check its arguments. This code was
+    refactored out to a separate function so that the PyInputPlus module (or
+    other modules) could check their parameters' arguments for inputTime().
+    """
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
     if formats is None:
         raise PySimpleValidateException('formats parameter must be specified')
@@ -567,7 +625,7 @@ def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=Tru
             raise PySimpleValidateException('formats argument contains invalid strftime format strings')
 
 
-def _validateToDateTimeFormat(value, formats, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def _validateToDateTimeFormat(value, formats, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
     # Validate parameters.
     _validateParamsFor__validateToDateTimeFormat(formats, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
 
@@ -589,18 +647,30 @@ def _validateToDateTimeFormat(value, formats, blank=False, strip=True, allowlist
     _raiseValidationException(_('%r is not a valid time.') % (value), excMsg)
 
 
-def validateTime(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def validateTime(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                  formats=('%H:%M:%S', '%H:%M', '%X'), excMsg=None):
-    """Returns True if value is a time that passes validation. Raises an
-    exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not a time formatted in one
+    of the formats formats. Returns a datetime.time object of value.
 
-    Args:
-        value (str): The value being validated as a time.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid time.
+    * value (str): The value being validated as a time.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid time.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateTime('12:00:01')
+    datetime.time(12, 0, 1)
+    >>> pysv.validateTime('13:00:01')
+    datetime.time(13, 0, 1)
+    >>> pysv.validateTime('25:00:01')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '25:00:01' is not a valid time that follows the formats argument.
+    >>> pysv.validateTime('hour 12 minute 01', formats=['hour %H minute %M'])
+    datetime.time(12, 1)
     """
 
     # TODO - handle this
@@ -613,18 +683,28 @@ def validateTime(value, blank=False, strip=True, allowlistRegexes=None, blocklis
         _raiseValidationException(_('%r is not a valid time that follows the formats argument.') % (_errstr(value)), excMsg)
 
 
-def validateDate(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def validateDate(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                  formats=('%Y/%m/%d', '%y/%m/%d', '%m/%d/%Y', '%m/%d/%y', '%x'), excMsg=None):
-    """Returns True if value is a date that passes validation. Raises an
-    exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not a time formatted in one
+    of the formats formats. Returns a datetime.date object of value.
 
-    Args:
-        value (str): The value being validated as a time.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid date.
+    * value (str): The value being validated as a time.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid date.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateDate('2/29/2004')
+    datetime.date(2004, 2, 29)
+    >>> pysv.validateDate('2/29/2005')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '2/29/2005' is not a valid date that follows the formats argument.
+    >>> pysv.validateDate('September 2019', formats=['%B %Y'])
+    datetime.date(2019, 9, 1)
     """
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
@@ -634,20 +714,30 @@ def validateDate(value, blank=False, strip=True, allowlistRegexes=None, blocklis
         _raiseValidationException(_('%r is not a valid date that follows the formats argument.') % (_errstr(value)), excMsg)
 
 
-def validateDatetime(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None,
+def validateDatetime(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
                      formats=('%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S',
                               '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%x %H:%M',
                               '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S'), excMsg=None):
-    """Returns True if value is a datetime that passes validation. Raises an
-    exception if ValidationException if value fails validation.
+    """Raises ValidationException if value is not a datetime formatted in one
+    of the formats formats. Returns a datetime.datetime object of value.
 
-    Args:
-        value (str): The value being validated as a time.
-        blank (bool): If False, a blank string for value will be accepted.
-        strip (bool, str, None): If True, whitespace is stripped from value. If a str, the characters in it are stripped from value. If None, nothing is stripped.
-        allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
-        blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-        formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid datetime.
+    * value (str): The value being validated as a datetime.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid datetime.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateDatetime('2018/10/31 12:00:01')
+    datetime.datetime(2018, 10, 31, 12, 0, 1)
+    >>> pysv.validateDatetime('10/31/2018 12:00:01')
+    datetime.datetime(2018, 10, 31, 12, 0, 1)
+    >>> pysv.validateDatetime('10/31/2018')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '10/31/2018' is not a valid date and time that follows the formats argument.
     """
 
     # Reuse the logic in _validateToDateTimeFormat() for this function.
@@ -657,24 +747,109 @@ def validateDatetime(value, blank=False, strip=True, allowlistRegexes=None, bloc
         _raiseValidationException(_('%r is not a valid date and time that follows the formats argument.') % (_errstr(value)), excMsg)
 
 
+def validateFilename(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, mustExist=False, excMsg=None):
+    """Raises ValidationException if value is not a valid filename.
+    Filenames can't contain \\ / : * ? " < > | or end with a space.
+    Returns the value argument.
+
+    Note that this validates filenames, not filepaths. The / and \\ characters
+    are invalid for filenames.
+
+    * value (str): The value being validated as an IP address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateFilename('foobar.txt')
+    'foobar.txt'
+    >>> pysv.validateFilename('???.exe')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '???.exe' is not a valid filename.
+    >>> pysv.validateFilename('/full/path/to/foo.txt')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '/full/path/to/foo.txt' is not a valid filename.
+    """
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
+    if returnNow:
+        return value
+
+    if (value != value.strip()) or (any(c in value for c in '\\/:*?"<>|')):
+        _raiseValidationException(_('%r is not a valid filename.') % (_errstr(value)), excMsg)
+    return value
 
 
+def validateFilepath(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, mustExist=False, excMsg=None):
+    r"""Raises ValidationException if value is not a valid filename.
+    Filenames can't contain \\ / : * ? " < > |
+    Returns the value argument.
 
-# TODO: The rest of these functions are under development.
+    * value (str): The value being validated as an IP address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
 
-def validateFilename(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, mustExist=False, excMsg=None):
-    # TODO - finish this.
-    if value.endswith(' '):
-        _raiseValidationException(_('%r is not a valid filename because it ends with a space.') % (_errstr(value)), excMsg)
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateFilepath('foo.txt')
+    'foo.txt'
+    >>> pysv.validateFilepath('/spam/foo.txt')
+    '/spam/foo.txt'
+    >>> pysv.validateFilepath(r'c:\spam\foo.txt')
+    'c:\\spam\\foo.txt'
+    >>> pysv.validateFilepath(r'c:\spam\???.txt')
+    Traceback (most recent call last):
+      ...
+    pysimplevalidate.ValidationException: 'c:\\spam\\???.txt' is not a valid file path.
+    """
+    returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
+    if returnNow:
+        return value
+
+    if (value != value.strip()) or (any(c in value for c in '*?"<>|')): # Same as validateFilename, except we allow \ and / and :
+        if ':' in value:
+            if value.find(':', 2) != -1 or not value[0].isalpha():
+                # For Windows: Colon can only be found at the beginning, e.g. 'C:\', or the first letter is not a letter drive.
+                _raiseValidationException(_('%r is not a valid file path.') % (_errstr(value)), excMsg)
+        _raiseValidationException(_('%r is not a valid file path.') % (_errstr(value)), excMsg)
+    return value
     raise NotImplementedError()
 
 
-def validateFilepath(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, mustExist=False):
-    # TODO - finish this.
-    raise NotImplementedError()
+def validateIP(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not an IPv4 or IPv6 address.
+    Returns the value argument.
 
+    * value (str): The value being validated as an IP address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
 
-def validateIp(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateIP('127.0.0.1')
+    '127.0.0.1'
+    >>> pysv.validateIP('255.255.255.255')
+    '255.255.255.255'
+    >>> pysv.validateIP('256.256.256.256')
+    Traceback (most recent call last):
+    pysimplevalidate.ValidationException: '256.256.256.256' is not a valid IP address.
+    >>> pysv.validateIP('1:2:3:4:5:6:7:8')
+    '1:2:3:4:5:6:7:8'
+    >>> pysv.validateIP('1::8')
+    '1::8'
+    >>> pysv.validateIP('fe80::7:8%eth0')
+    'fe80::7:8%eth0'
+    >>> pysv.validateIP('::255.255.255.255')
+    '::255.255.255.255'
+    """
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
 
@@ -684,15 +859,41 @@ def validateIp(value, blank=False, strip=True, allowlistRegexes=None, blocklistR
 
     # Reuse the logic in validateRegex()
     try:
-        if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes):
-            return value
+        try:
+            # Check if value is an IPv4 address.
+            if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes):
+                return value
+        except:
+            pass # Go on to check if it's an IPv6 address.
+
+        # Check if value is an IPv6 address.
         if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes):
             return value
     except ValidationException:
         _raiseValidationException(_('%r is not a valid IP address.') % (_errstr(value)), excMsg)
 
 
-def validateRegex(value, regex, flags=0, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def validateIPv4(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not an IPv4 address.
+    Returns the value argument.
+
+    * value (str): The value being validated as an IPv4 address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateIPv4('127.0.0.1')
+    '127.0.0.1'
+    >>> pysv.validateIPv4('255.255.255.255')
+    '255.255.255.255'
+    >>> pysv.validateIPv4('256.256.256.256')
+    Traceback (most recent call last):
+    pysimplevalidate.ValidationException: '256.256.256.256' is not a valid IP address.
+    """
+
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
 
@@ -700,14 +901,129 @@ def validateRegex(value, regex, flags=0, blank=False, strip=True, allowlistRegex
     if returnNow:
         return value
 
-    mo = re.compile(regex, flags).search(value)
+    # Reuse the logic in validateRegex()
+
+    try:
+        # Check if value is an IPv4 address.
+        if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes):
+            return value
+    except ValidationException:
+        _raiseValidationException(_('%r is not a valid IPv4 address.') % (_errstr(value)), excMsg)
+
+
+def validateIPv6(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not an IPv6 address.
+    Returns the value argument.
+
+    * value (str): The value being validated as an IPv6 address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateIP('1:2:3:4:5:6:7:8')
+    '1:2:3:4:5:6:7:8'
+    >>> pysv.validateIP('1::8')
+    '1::8'
+    >>> pysv.validateIP('fe80::7:8%eth0')
+    'fe80::7:8%eth0'
+    >>> pysv.validateIP('::255.255.255.255')
+    '::255.255.255.255'
+    """
+    # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
+    if returnNow:
+        return value
+
+    # Reuse the logic in validateRegex()
+    try:
+        # Check if value is an IPv6 address.
+        if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes):
+            return value
+    except ValidationException:
+        _raiseValidationException(_('%r is not a valid IPv6 address.') % (_errstr(value)), excMsg)
+
+
+def validateRegex(value, regex, flags=0, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value does not match the regular expression in regex.
+    Returns the value argument.
+
+    This is similar to calling inputStr() and using the allowlistRegexes
+    keyword argument, however, validateRegex() allows you to pass regex
+    flags such as re.IGNORECASE or re.VERBOSE. You can also pass a regex
+    object directly.
+
+    If you want to check if a string is a regular expression string, call
+    validateRegexStr().
+
+    * value (str): The value being validated as a regular expression string.
+    * regex (str, regex): The regular expression to match the value against.
+    * flags (int): Identical to the flags argument in re.compile(). Pass re.VERBOSE et al here.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> pysv.validateRegex('cat bat rat', r'(cat)|(dog)|(moose)', re.IGNORECASE)
+    'cat'
+    >>> pysv.validateRegex('He said "Hello".', r'"(.*?)"', re.IGNORECASE)
+    '"Hello"'
+    """
+
+    # Validate parameters.
+    _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
+    if returnNow:
+        return value
+
+    # Search value with regex, whether regex is a str or regex object.
+    if isinstance(regex, str):
+        # TODO - check flags to see they're valid regex flags.
+        mo = re.compile(regex, flags).search(value)
+    elif isinstance(regex, REGEX_TYPE):
+        mo = regex.search(value)
+    else:
+        raise PySimpleValidateException('regex must be a str or regex object')
+
     if mo is not None:
         return mo.group()
     else:
         _raiseValidationException(_('%r does not match the specified pattern.') % (_errstr(value)), excMsg)
 
 
-def validateRegexStr(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def validateRegexStr(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value can't be used as a regular expression string.
+    Returns the value argument as a regex object.
+
+    If you want to check if a string matches a regular expression, call
+    validateRegex().
+
+    * value (str): The value being validated as a regular expression string.
+    * regex (str, regex): The regular expression to match the value against.
+    * flags (int): Identical to the flags argument in re.compile(). Pass re.VERBOSE et al here.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateRegexStr('(cat)|(dog)')
+    re.compile('(cat)|(dog)')
+    >>> pysv.validateRegexStr('"(.*?)"')
+    re.compile('"(.*?)"')
+    >>> pysv.validateRegexStr('"(.*?"')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '"(.*?"' is not a valid regular expression: missing ), unterminated subpattern at position 1
+    """
+
     # TODO - I'd be nice to check regexes in other languages, i.e. JS and Perl.
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
 
@@ -721,17 +1037,71 @@ def validateRegexStr(value, blank=False, strip=True, allowlistRegexes=None, bloc
         _raiseValidationException(_('%r is not a valid regular expression: %s') % (_errstr(value), ex), excMsg)
 
 
-def validateURL(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def validateURL(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not a URL.
+    Returns the value argument.
+
+    The "http" or "https" protocol part of the URL is optional.
+
+    * value (str): The value being validated as a URL.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateURL('https://inventwithpython.com')
+    'https://inventwithpython.com'
+    >>> pysv.validateURL('inventwithpython.com')
+    'inventwithpython.com'
+    >>> pysv.validateURL('localhost')
+    'localhost'
+    >>> pysv.validateURL('mailto:al@inventwithpython.com')
+    'mailto:al@inventwithpython.com'
+    >>> pysv.validateURL('ftp://example.com')
+    'example.com'
+    >>> pysv.validateURL('https://inventwithpython.com/blog/2018/02/02/how-to-ask-for-programming-help/')
+    'https://inventwithpython.com/blog/2018/02/02/how-to-ask-for-programming-help/'
+    >>> pysv.validateURL('blah blah blah')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: 'blah blah blah' is not a valid URL.
+    """
+
     # Reuse the logic in validateRegex()
     try:
         result = validateRegex(value=value, regex=URL_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
         if result is not None:
             return result
     except ValidationException:
+        # 'localhost' is also an acceptable URL:
+        if value == 'localhost':
+            return value
+
         _raiseValidationException(_('%r is not a valid URL.') % (value), excMsg)
 
 
-def validateEmail(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+def validateEmail(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not an email address.
+    Returns the value argument.
+
+    * value (str): The value being validated as an email address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateEmail('al@inventwithpython.com')
+    'al@inventwithpython.com'
+    >>> pysv.validateEmail('alinventwithpython.com')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: 'alinventwithpython.com' is not a valid email address.
+    """
+
     # Reuse the logic in validateRegex()
     try:
         result = validateRegex(value=value, regex=EMAIL_REGEX, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
@@ -741,10 +1111,32 @@ def validateEmail(value, blank=False, strip=True, allowlistRegexes=None, blockli
         _raiseValidationException(_('%r is not a valid email address.') % (value), excMsg)
 
 
-def validateYesNo(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, yesVal='yes', noVal='no', caseSensitive=False, excMsg=None):
-    # Note: Rather than always return True, this function returns the original `yes` or `no` argument, depending on what `value` represents.
+def validateYesNo(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, yesVal='yes', noVal='no', caseSensitive=False, excMsg=None):
+    """Raises ValidationException if value is not a yes or no response.
+    Returns the yesVal or noVal argument, not value.
 
-    # Validate parameters.
+    Note that value can be any case (by default) and can also just match the
+
+    * value (str): The value being validated as an email address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * caseSensitive (bool): Determines if value must match the case of yesVal and noVal. Defaults to False.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateYesNo('y')
+    'yes'
+    >>> pysv.validateYesNo('YES')
+    'yes'
+    >>> pysv.validateYesNo('No')
+    'no'
+    >>> pysv.validateYesNo('OUI', yesVal='oui', noVal='no')
+    'oui'
+    """
+
+    # Validate parameters. TODO - can probably improve this to remove the duplication.
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
 
     returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
@@ -757,8 +1149,10 @@ def validateYesNo(value, blank=False, strip=True, allowlistRegexes=None, blockli
         raise PySimpleValidateException('yesVal argument must be a non-empty string.')
     if len(noVal) == 0:
         raise PySimpleValidateException('noVal argument must be a non-empty string.')
-    if yesVal == noVal:
+    if (yesVal == noVal) or (not caseSensitive and yesVal.upper() == noVal.upper()):
         raise PySimpleValidateException('yesVal and noVal arguments must be different.')
+    if (yesVal[0] == noVal[0]) or (not caseSensitive and yesVal[0].upper() == noVal[0].upper()):
+        raise PySimpleValidateException('first character of yesVal and noVal arguments must be different')
 
     returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
     if returnNow:
@@ -778,7 +1172,35 @@ def validateYesNo(value, blank=False, strip=True, allowlistRegexes=None, blockli
     _raiseValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yesVal, noVal), excMsg)
 
 
-def validateBool(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, trueVal='True', falseVal='False', caseSensitive=False, excMsg=None):
+def validateBool(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, trueVal='True', falseVal='False', caseSensitive=False, excMsg=None):
+    """Raises ValidationException if value is not an email address.
+    Returns the yesVal or noVal argument, not value.
+
+    * value (str): The value being validated as an email address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateYesNo('y')
+    'yes'
+    >>> pysv.validateYesNo('YES')
+    'yes'
+    >>> pysv.validateYesNo('No')
+    'no'
+    >>> pysv.validateYesNo('OUI', yesVal='oui', noVal='no')
+    'oui'
+    """
+
+    # Validate parameters. TODO - can probably improve this to remove the duplication.
+    _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
+
+    returnNow, value = _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes, excMsg)
+    if returnNow:
+        return value
+
     # Replace the exception messages used in validateYesNo():
     trueVal = str(trueVal)
     falseVal = str(falseVal)
@@ -786,8 +1208,10 @@ def validateBool(value, blank=False, strip=True, allowlistRegexes=None, blocklis
         raise PySimpleValidateException('trueVal argument must be a non-empty string.')
     if len(falseVal) == 0:
         raise PySimpleValidateException('falseVal argument must be a non-empty string.')
-    if trueVal == falseVal:
-        raise PySimpleValidateException('trueVal and falseVal arguments must be different.')
+    if (trueVal == falseVal) or (not caseSensitive and trueVal.upper() == falseVal.upper()):
+        raise PySimpleValidateException('trueVal and noVal arguments must be different.')
+    if (trueVal[0] == falseVal[0]) or (not caseSensitive and trueVal[0].upper() == falseVal[0].upper()):
+        raise PySimpleValidateException('first character of trueVal and noVal arguments must be different')
 
     result = validateYesNo(value, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes, yesVal=trueVal, noVal=falseVal, caseSensitive=caseSensitive, excMsg=None)
 
@@ -797,11 +1221,34 @@ def validateBool(value, blank=False, strip=True, allowlistRegexes=None, blocklis
     elif result == falseVal:
         return False
     else:
-        return result # Return `result` if a blank or allowlisted value was entered, or postValidateApplyFunc() transformed the value.
+        assert False, 'inner validateYesNo() call returned something that was not yesVal or noVal. This should never happen.'
 
 
-def validateState(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
-    # TODO - note that this is USA-centric
+def validateState(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None, returnStateName=False):
+    """Raises ValidationException if value is not a USA state.
+    Returns the capitalized state abbreviation, unless returnStateName is True
+    in which case it returns the titlecased state name.
+
+    * value (str): The value being validated as an email address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+    * returnStateName (bool): If True, the full state name is returned, i.e. 'California'. Otherwise, the abbreviation, i.e. 'CA'. Defaults to False.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateState('tx')
+    'TX'
+    >>> pysv.validateState('california')
+    'CA'
+    >>> pysv.validateState('WASHINGTON')
+    'WA'
+    >>> pysv.validateState('WASHINGTON', returnStateName=True)
+    'Washington'
+    """
+
+    # TODO - note that this is USA-centric. I should work on trying to make this more international.
 
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
@@ -810,10 +1257,16 @@ def validateState(value, blank=False, strip=True, allowlistRegexes=None, blockli
     if returnNow:
         return value
 
-    if value.upper() in STATES_UPPER.keys(): # check if `value` is a state abbreviation
-        return STATES[value.upper()] # It turns out that titlecase is good for all the states.
-    elif value.title() in STATES.values(): # check if `value` is a state name
-        return value.title()
+    if value.upper() in USA_STATES_UPPER.keys(): # check if value is a state abbreviation
+        if returnStateName:
+            return USA_STATES[value.upper()] # Return full state name.
+        else:
+            return value.upper() # Return abbreviation.
+    elif value.title() in USA_STATES.values(): # check if value is a state name
+        if returnStateName:
+            return value.title() # Return full state name.
+        else:
+            return USA_STATES_REVERSED[value.title()] # Return abbreviation.
 
     _raiseValidationException(_('%r is not a state.') % (_errstr(value)), excMsg)
 
@@ -830,7 +1283,24 @@ def validatePhone():
     raise NotImplementedError()
 
 
-def validateMonth(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, monthNames=MONTHS, excMsg=None):
+def validateMonth(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, monthNames=ENGLISH_MONTHS, excMsg=None):
+    """Raises ValidationException if value is not a month, like 'Jan' or 'March'.
+    Returns the titlecased month.
+
+    * value (str): The value being validated as an email address.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * monthNames (Mapping): A mapping of uppercase month abbreviations to month names, i.e. {'JAN': 'January', ... }. The default provides English month names.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateMonth('Jan')
+    'January'
+    >>> pysv.validateMonth('MARCH')
+    'March'
+    """
 
     # returns full month name, e.g. 'January'
 
@@ -843,8 +1313,8 @@ def validateMonth(value, blank=False, strip=True, allowlistRegexes=None, blockli
 
 
     try:
-        if (monthNames == MONTHS) and (1 <= int(value) <= 12): # This check here only applies to months, not when validateDayOfWeek() calls this function.
-            return MONTH_NAMES[int(value) - 1]
+        if (monthNames == ENGLISH_MONTHS) and (1 <= int(value) <= 12): # This check here only applies to months, not when validateDayOfWeek() calls this function.
+            return ENGLISH_MONTH_NAMES[int(value) - 1]
     except:
         pass # continue if the user didn't enter a number 1 to 12.
 
@@ -852,28 +1322,75 @@ def validateMonth(value, blank=False, strip=True, allowlistRegexes=None, blockli
     if len(value) < 3:
         _raiseValidationException(_('%r is not a month.') % (_errstr(value)), excMsg)
 
-    if value[:3].upper() in monthNames.keys(): # check if `value` is a month abbreviation
+    if value[:3].upper() in monthNames.keys(): # check if value is a month abbreviation
         return monthNames[value[:3].upper()] # It turns out that titlecase is good for all the month.
-    elif value.upper() in monthNames.values(): # check if `value` is a month name
+    elif value.upper() in monthNames.values(): # check if value is a month name
         return value.title()
 
     _raiseValidationException(_('%r is not a month.') % (_errstr(value)), excMsg)
 
 
-def validateDayOfWeek(value, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, dayNames=DAYS_OF_WEEK, excMsg=None):
+def validateDayOfWeek(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, dayNames=ENGLISH_DAYS_OF_WEEK, excMsg=None):
+    """Raises ValidationException if value is not a day of the week, such as 'Mon' or 'Friday'.
+    Returns the titlecased day of the week.
+
+    * value (str): The value being validated as a day of the week.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * dayNames (Mapping): A mapping of uppercase day abbreviations to day names, i.e. {'SUN': 'Sunday', ...} The default provides English day names.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateDayOfWeek('mon')
+    'Monday'
+    >>> pysv.validateDayOfWeek('THURSday')
+    'Thursday'
+    """
+
     # TODO - reuse validateChoice for this function
 
     # returns full day of the week str, e.g. 'Sunday'
 
     # Reuses validateMonth.
     try:
-        return validateMonth(value, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes, monthNames=DAYS_OF_WEEK)
+        return validateMonth(value, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes, monthNames=ENGLISH_DAYS_OF_WEEK)
     except:
         # Replace the exception message.
         _raiseValidationException(_('%r is not a day of the week') % (_errstr(value)), excMsg)
 
 
-def validateDayOfMonth(value, year, month, blank=False, strip=True, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+
+def validateDayOfMonth(value, year, month, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
+    """Raises ValidationException if value is not a day of the month, from
+    1 to 28, 29, 30, or 31 depending on the month and year.
+    Returns value.
+
+    * value (str): The value being validated as existing as a numbered day in the given year and month.
+    * year (int): The given year.
+    * month (int): The given month. 1 is January, 2 is February, and so on.
+    * blank (bool): If False, a blank string for value will be accepted.
+    * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
+    * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
+    * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * excMsg (str): A custom message to use in the raised ValidationException.
+
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateDayOfMonth('31', 2019, 10)
+    31
+    >>> pysv.validateDayOfMonth('32', 2019, 10)
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '32' is not a day in the month of October 2019
+    >>> pysv.validateDayOfMonth('29', 2004, 2)
+    29
+    >>> pysv.validateDayOfMonth('29', 2005, 2)
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '29' is not a day in the month of February 2005
+
+    """
     try:
         daysInMonth = calendar.monthrange(year, month)[1]
     except:
@@ -883,7 +1400,7 @@ def validateDayOfMonth(value, year, month, blank=False, strip=True, allowlistReg
         return validateInt(value, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes, min=1, max=daysInMonth)
     except:
         # Replace the exception message.
-        _raiseValidationException(_('%r is not a day in the month of %s %s') % (_errstr(value), MONTH_NAMES[month], year), excMsg)
+        _raiseValidationException(_('%r is not a day in the month of %s %s') % (_errstr(value), ENGLISH_MONTH_NAMES[month - 1], year), excMsg)
 
 
 
@@ -891,4 +1408,4 @@ def validateDayOfMonth(value, year, month, blank=False, strip=True, allowlistReg
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    #doctest.testmod()

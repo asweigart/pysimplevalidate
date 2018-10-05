@@ -25,28 +25,28 @@ def test__errstr():
 
 def test__validateGenericParameters():
     # Test typical allowlist arguments.
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=[], blocklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=['valid'], blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=[], blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=['valid'], blocklistRegexes=None) is None
 
     # Test typical blocklist arguments.
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[]) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=['x']) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[('x', 'x')]) is None
-    assert pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[('x', 'x'), ('x', 'x')]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=['x']) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[('x', 'x')]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[('x', 'x'), ('x', 'x')]) is None
 
     # Test invalid blank argument.
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=None, strip=True, allowlistRegexes=None, blocklistRegexes=[])
+        pysv._validateGenericParameters(blank=None, strip=None, allowlistRegexes=None, blocklistRegexes=[])
 
     # Test invalid blocklist arguments.
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=42)
+        pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=42)
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[('x', 42)])
+        pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[('x', 42)])
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=True, allowlistRegexes=None, blocklistRegexes=[(42, 'x')])
+        pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[(42, 'x')])
 
 
 def test_validateNum():
@@ -242,11 +242,11 @@ def test_validateRegexStr():
         pysv.validateRegexStr(r'(')
 
 
-def test_validateIp():
+def test_validateIP():
     # Test typical usage.
-    assert pysv.validateIp('127.0.0.1')
-    assert pysv.validateIp('255.255.255.255')
-    assert pysv.validateIp('300.255.255.255')
+    assert pysv.validateIP('127.0.0.1')
+    assert pysv.validateIP('255.255.255.255')
+    assert pysv.validateIP('300.255.255.255')
 
 
 def test_validateYesNo():
@@ -288,12 +288,13 @@ def test_validateYesNo():
 
 def test_validateState():
     # Test typical usage.
-    assert pysv.validateState('CA')
-    assert pysv.validateState('California')
+    assert pysv.validateState('CA') == 'CA'
+    assert pysv.validateState('California') == 'CA'
+    assert pysv.validateState('CA', returnStateName=True) == 'California'
 
     # Test typical failure cases.
     with pytest.raises(pysv.ValidationException):
-        pysv.validateState('gas')
+        pysv.validateState('gaseous')
 
 
 def test__validateParamsFor_validateChoice():
@@ -344,6 +345,30 @@ def test__validateParamsFor_validateNum():
 
     with pytest.raises(pysv.PySimpleValidateException, message=' greaterThan argument must be int, float, or NoneType'):
         pysv._validateParamsFor_validateNum(greaterThan='invalid')
+
+def test_validateFilename():
+    # Test typical usage.
+    assert pysv.validateFilename('foobar.txt') == 'foobar.txt'
+
+    # Test typical failure cases.
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('\\')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('/')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename(':')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('*')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('?')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('"')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('<')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('>')
+    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+        pysv.validateFilename('|')
 
 if __name__ == '__main__':
     pytest.main()
