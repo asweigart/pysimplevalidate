@@ -239,7 +239,7 @@ def validateStr(value, blank=False, strip=None, allowlistRegexes=None, blocklist
         print('Hello, ' + validateStr(your_name))
 
     * value (str): The value being validated as a string.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -287,7 +287,7 @@ def validateNum(value, blank=False, strip=None, allowlistRegexes=None, blocklist
     when converting a string to a number, so does this validateNum().
 
     * value (str): The value being validated as an int or float.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -397,7 +397,7 @@ def validateInt(value, blank=False, strip=None, allowlistRegexes=None, blocklist
     when converting a string to a number, so does this validateNum().
 
     * value (str): The value being validated as an int or float.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -436,7 +436,7 @@ def validateFloat(value, blank=False, strip=None, allowlistRegexes=None, blockli
     when converting a string to a number, so does this validateNum().
 
     * value (str): The value being validated as an int or float.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -533,7 +533,7 @@ def validateChoice(value, choices, blank=False, strip=None, allowlistRegexes=Non
     for matching with the text of the strings in choices.
 
     * value (str): The value being validated.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -653,7 +653,7 @@ def validateTime(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     of the formats formats. Returns a datetime.time object of value.
 
     * value (str): The value being validated as a time.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -668,7 +668,7 @@ def validateTime(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     >>> pysv.validateTime('25:00:01')
     Traceback (most recent call last):
         ...
-    pysimplevalidate.ValidationException: '25:00:01' is not a valid time that follows the formats argument.
+    pysimplevalidate.ValidationException: '25:00:01' is not a valid time.
     >>> pysv.validateTime('hour 12 minute 01', formats=['hour %H minute %M'])
     datetime.time(12, 1)
     """
@@ -680,7 +680,7 @@ def validateTime(value, blank=False, strip=None, allowlistRegexes=None, blocklis
         dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
         return datetime.time(dt.hour, dt.minute, dt.second, dt.microsecond)
     except ValidationException:
-        _raiseValidationException(_('%r is not a valid time that follows the formats argument.') % (_errstr(value)), excMsg)
+        _raiseValidationException(_('%r is not a valid time.') % (_errstr(value)), excMsg)
 
 
 def validateDate(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
@@ -689,7 +689,7 @@ def validateDate(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     of the formats formats. Returns a datetime.date object of value.
 
     * value (str): The value being validated as a time.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string for value will be accepted.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -702,7 +702,7 @@ def validateDate(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     >>> pysv.validateDate('2/29/2005')
     Traceback (most recent call last):
         ...
-    pysimplevalidate.ValidationException: '2/29/2005' is not a valid date that follows the formats argument.
+    pysimplevalidate.ValidationException: '2/29/2005' is not a valid date.
     >>> pysv.validateDate('September 2019', formats=['%B %Y'])
     datetime.date(2019, 9, 1)
     """
@@ -711,7 +711,7 @@ def validateDate(value, blank=False, strip=None, allowlistRegexes=None, blocklis
         dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
         return datetime.date(dt.year, dt.month, dt.day)
     except ValidationException:
-        _raiseValidationException(_('%r is not a valid date that follows the formats argument.') % (_errstr(value)), excMsg)
+        _raiseValidationException(_('%r is not a valid date.') % (_errstr(value)), excMsg)
 
 
 def validateDatetime(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None,
@@ -722,7 +722,7 @@ def validateDatetime(value, blank=False, strip=None, allowlistRegexes=None, bloc
     of the formats formats. Returns a datetime.datetime object of value.
 
     * value (str): The value being validated as a datetime.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -737,17 +737,17 @@ def validateDatetime(value, blank=False, strip=None, allowlistRegexes=None, bloc
     >>> pysv.validateDatetime('10/31/2018')
     Traceback (most recent call last):
         ...
-    pysimplevalidate.ValidationException: '10/31/2018' is not a valid date and time that follows the formats argument.
+    pysimplevalidate.ValidationException: '10/31/2018' is not a valid date and time.
     """
 
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
         return _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, allowlistRegexes=allowlistRegexes, blocklistRegexes=blocklistRegexes)
     except ValidationException:
-        _raiseValidationException(_('%r is not a valid date and time that follows the formats argument.') % (_errstr(value)), excMsg)
+        _raiseValidationException(_('%r is not a valid date and time.') % (_errstr(value)), excMsg)
 
 
-def validateFilename(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, mustExist=False, excMsg=None):
+def validateFilename(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None):
     """Raises ValidationException if value is not a valid filename.
     Filenames can't contain \\ / : * ? " < > | or end with a space.
     Returns the value argument.
@@ -756,7 +756,7 @@ def validateFilename(value, blank=False, strip=None, allowlistRegexes=None, bloc
     are invalid for filenames.
 
     * value (str): The value being validated as an IP address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -784,13 +784,13 @@ def validateFilename(value, blank=False, strip=None, allowlistRegexes=None, bloc
     return value
 
 
-def validateFilepath(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, mustExist=False, excMsg=None):
+def validateFilepath(value, blank=False, strip=None, allowlistRegexes=None, blocklistRegexes=None, excMsg=None, mustExist=False):
     r"""Raises ValidationException if value is not a valid filename.
     Filenames can't contain \\ / : * ? " < > |
     Returns the value argument.
 
     * value (str): The value being validated as an IP address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -827,7 +827,7 @@ def validateIP(value, blank=False, strip=None, allowlistRegexes=None, blocklistR
     Returns the value argument.
 
     * value (str): The value being validated as an IP address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -878,7 +878,7 @@ def validateIPv4(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     Returns the value argument.
 
     * value (str): The value being validated as an IPv4 address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -916,7 +916,7 @@ def validateIPv6(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     Returns the value argument.
 
     * value (str): The value being validated as an IPv6 address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -963,7 +963,7 @@ def validateRegex(value, regex, flags=0, blank=False, strip=None, allowlistRegex
     * value (str): The value being validated as a regular expression string.
     * regex (str, regex): The regular expression to match the value against.
     * flags (int): Identical to the flags argument in re.compile(). Pass re.VERBOSE et al here.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1007,7 +1007,7 @@ def validateRegexStr(value, blank=False, strip=None, allowlistRegexes=None, bloc
     * value (str): The value being validated as a regular expression string.
     * regex (str, regex): The regular expression to match the value against.
     * flags (int): Identical to the flags argument in re.compile(). Pass re.VERBOSE et al here.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1044,7 +1044,7 @@ def validateURL(value, blank=False, strip=None, allowlistRegexes=None, blocklist
     The "http" or "https" protocol part of the URL is optional.
 
     * value (str): The value being validated as a URL.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1087,7 +1087,7 @@ def validateEmail(value, blank=False, strip=None, allowlistRegexes=None, blockli
     Returns the value argument.
 
     * value (str): The value being validated as an email address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1118,7 +1118,7 @@ def validateYesNo(value, blank=False, strip=None, allowlistRegexes=None, blockli
     Note that value can be any case (by default) and can also just match the
 
     * value (str): The value being validated as an email address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1177,7 +1177,7 @@ def validateBool(value, blank=False, strip=None, allowlistRegexes=None, blocklis
     Returns the yesVal or noVal argument, not value.
 
     * value (str): The value being validated as an email address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1230,7 +1230,7 @@ def validateState(value, blank=False, strip=None, allowlistRegexes=None, blockli
     in which case it returns the titlecased state name.
 
     * value (str): The value being validated as an email address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1288,7 +1288,7 @@ def validateMonth(value, blank=False, strip=None, allowlistRegexes=None, blockli
     Returns the titlecased month.
 
     * value (str): The value being validated as an email address.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1335,7 +1335,7 @@ def validateDayOfWeek(value, blank=False, strip=None, allowlistRegexes=None, blo
     Returns the titlecased day of the week.
 
     * value (str): The value being validated as a day of the week.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
@@ -1370,7 +1370,7 @@ def validateDayOfMonth(value, year, month, blank=False, strip=None, allowlistReg
     * value (str): The value being validated as existing as a numbered day in the given year and month.
     * year (int): The given year.
     * month (int): The given month. 1 is January, 2 is February, and so on.
-    * blank (bool): If False, a blank string for value will be accepted.
+    * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowlistRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blocklistRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
