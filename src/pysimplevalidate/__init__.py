@@ -9,7 +9,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.2.4'
+__version__ = '0.2.7'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
@@ -136,21 +136,29 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
     elif blank and value == '':
         return True, value # The value is blank and blanks are allowed, so return True to indicate that the caller should return value immediately.
 
+    # NOTE: We check if something matches the allow-list first, then we check the block-list second.
+
     # Check the allowlistRegexes.
     if allowlistRegexes is not None:
         for regex in allowlistRegexes:
-            if re.search(regex, value) is not None:
-                return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
+            if isinstance(regex, re.Pattern):
+                if regex.search(value, re.IGNORECASE) is not None:
+                    return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
+            else:
+                if re.search(regex, value, re.IGNORECASE) is not None:
+                    return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
 
     # Check the blocklistRegexes.
     if blocklistRegexes is not None:
-        for blocklistRegexesed in blocklistRegexes:
-            if isinstance(blocklistRegexesed, str):
-                regex, response = blocklistRegexesed, DEFAULT_BLOCKLIST_RESPONSE
+        for blocklistRegexItem in blocklistRegexes:
+            if isinstance(blocklistRegexItem, str):
+                regex, response = blocklistRegexItem, DEFAULT_BLOCKLIST_RESPONSE
             else:
-                regex, response = blocklistRegexesed
+                regex, response = blocklistRegexItem
 
-            if re.search(regex, value) is not None:
+            if isinstance(regex, re.Pattern) and regex.search(value, re.IGNORECASE) is not None:
+                _raiseValidationException(response, excMsg) # value is on a blocklist
+            elif re.search(regex, value, re.IGNORECASE) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
 
     return False, value # Return False and the possibly modified value, and leave it up to the caller to decide if it's valid or not.

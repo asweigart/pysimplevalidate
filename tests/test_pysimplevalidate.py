@@ -47,6 +47,26 @@ def test__validateGenericParameters():
         pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[(42, 'x')])
 
 
+def test_blocklist():
+    # Test typical usage.
+    with pytest.raises(pysv.ValidationException):
+        pysv.validateStr('cat', blocklistRegexes=[r'c'])
+    with pytest.raises(pysv.ValidationException):
+        pysv.validateStr('cat', blocklistRegexes=[r'\w'])
+    with pytest.raises(pysv.ValidationException):
+        pysv.validateStr('cat', blocklistRegexes=[r't$'])
+    with pytest.raises(pysv.ValidationException):
+        pysv.validateStr('cat', blocklistRegexes=[r'x', r'y', r'c'])
+
+    # Test that these do not raise an exception:
+    assert pysv.validateStr('cat', blocklistRegexes=[r'xyz']) == 'cat'
+    assert pysv.validateStr('cat', blocklistRegexes=[r'x', r'y', r'z']) == 'cat'
+    assert pysv.validateStr('cat', blocklistRegexes=[r'caterpillar']) == 'cat'
+    assert pysv.validateStr('cat', blocklistRegexes=[r'\d']) == 'cat'
+    assert pysv.validateStr('cat', blocklistRegexes=[r'\W']) == 'cat'
+
+
+
 def test_validateNum():
     # Test typical usage.
     assert pysv.validateNum('42')
