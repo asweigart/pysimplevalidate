@@ -142,10 +142,10 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
     if allowlistRegexes is not None:
         for regex in allowlistRegexes:
             if isinstance(regex, re.Pattern):
-                if regex.search(value, re.IGNORECASE) is not None:
+                if regex.search(value) is not None:
                     return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
             else:
-                if re.search(regex, value, re.IGNORECASE) is not None:
+                if re.search(regex, value) is not None:
                     return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
 
     # Check the blocklistRegexes.
@@ -156,9 +156,9 @@ def _prevalidationCheck(value, blank, strip, allowlistRegexes, blocklistRegexes,
             else:
                 regex, response = blocklistRegexItem
 
-            if isinstance(regex, re.Pattern) and regex.search(value, re.IGNORECASE) is not None:
+            if isinstance(regex, re.Pattern) and regex.search(value) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
-            elif re.search(regex, value, re.IGNORECASE) is not None:
+            elif re.search(regex, value) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
 
     return False, value # Return False and the possibly modified value, and leave it up to the caller to decide if it's valid or not.
