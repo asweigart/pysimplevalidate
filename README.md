@@ -63,65 +63,65 @@ the value is returned.
 
 It's recommended to import PySimpleValidation with the shorter name ``pysv``.
 
->>> import pysimplevalidate as pysv
->>> pysv.validateStr('I have a cat', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
-Traceback (most recent call last):
-    ...
-pysimplevalidate.ValidationException: This response is invalid.
->>> pysv.validateStr('I have a caterpillar', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
-'I have a caterpillar'
->>> pysv.validateStr('I have a cat and a dog', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
-'I have a cat and a dog'
->>> pysv.validateStr('I have a mooooose', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
-'I have a mooooose'
->>> pysv.validateNum('42')
-42
->>> pysv.validateNum('twelve')
-Traceback (most recent call last):
-    ...
-pysimplevalidate.ValidationException: 'twelve' is not a number.
->>>
->>> pysv.validateNum('5', lessThan=10)
-5
->>> pysv.validateFloat('4')
-4.0
->>> pysv.validateFloat('4.12')
-4.12
->>> pysv.validateInt('4.12')
-Traceback (most recent call last):
-    ...
-pysimplevalidate.ValidationException: '4.12' is not an integer.
->>> pysv.validateChoice('cat', ['dog', 'cat', 'moose'])
-'cat'
->>> pysv.validateChoice('CAT', ['dog', 'cat', 'moose'])
-'cat'
->>> pysv.validateTime('12:00:01')
-datetime.time(12, 0, 1)
->>> pysv.validateTime('hour 12 minute 00', formats=['hour %H minute %M'])
-datetime.time(12, 0)
->>> pysv.validateEmail('al@inventwithpython.com')
-'al@inventwithpython.com'
->>> pysv.validateURL('https://inventwithpython.com')
-'https://inventwithpython.com'
->>> pysv.validateYesNo('y')
-'yes'
->>> pysv.validateYesNo('NO')
-'no'
->>> pysv.validateState('California')
-'CA'
->>> pysv.validateState('TEXAS')
-'TX'
->>> pysv.validateState('NY')
-'NY'
->>> pysv.validateDayOfWeek('mon')
-'Monday'
->>> pysv.validateDayOfWeek('FRIday')
-'Friday'
->>> pysv.validateDayOfMonth(29, 2004, 2)
-29
->>> pysv.validateDayOfMonth(31, 2019, 10)
-31
->>> pysv.validateDayOfMonth(31, 2019, 9)
-Traceback (most recent call last):
-    ...
-pysimplevalidate.ValidationException: '31' is not a day in the month of September 2019
+    >>> import pysimplevalidate as pysv
+    >>> pysv.validateStr('I have a cat', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: This response is invalid.
+    >>> pysv.validateStr('I have a caterpillar', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
+    'I have a caterpillar'
+    >>> pysv.validateStr('I have a cat and a dog', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
+    'I have a cat and a dog'
+    >>> pysv.validateStr('I have a mooooose', allowlistRegexes=['caterpillar', 'cat(.*?)dog'], blocklistRegexes=['cat', 'm(o){2:}se'])
+    'I have a mooooose'
+    >>> pysv.validateNum('42')
+    42
+    >>> pysv.validateNum('twelve')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: 'twelve' is not a number.
+    >>>
+    >>> pysv.validateNum('5', lessThan=10)
+    5
+    >>> pysv.validateFloat('4')
+    4.0
+    >>> pysv.validateFloat('4.12')
+    4.12
+    >>> pysv.validateInt('4.12')
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '4.12' is not an integer.
+    >>> pysv.validateChoice('cat', ['dog', 'cat', 'moose'])
+    'cat'
+    >>> pysv.validateChoice('CAT', ['dog', 'cat', 'moose'])
+    'cat'
+    >>> pysv.validateTime('12:00:01')
+    datetime.time(12, 0, 1)
+    >>> pysv.validateTime('hour 12 minute 00', formats=['hour %H minute %M'])
+    datetime.time(12, 0)
+    >>> pysv.validateEmail('al@inventwithpython.com')
+    'al@inventwithpython.com'
+    >>> pysv.validateURL('https://inventwithpython.com')
+    'https://inventwithpython.com'
+    >>> pysv.validateYesNo('y')
+    'yes'
+    >>> pysv.validateYesNo('NO')
+    'no'
+    >>> pysv.validateState('California')
+    'CA'
+    >>> pysv.validateState('TEXAS')
+    'TX'
+    >>> pysv.validateState('NY')
+    'NY'
+    >>> pysv.validateDayOfWeek('mon')
+    'Monday'
+    >>> pysv.validateDayOfWeek('FRIday')
+    'Friday'
+    >>> pysv.validateDayOfMonth(29, 2004, 2)
+    29
+    >>> pysv.validateDayOfMonth(31, 2019, 10)
+    31
+    >>> pysv.validateDayOfMonth(31, 2019, 9)
+    Traceback (most recent call last):
+        ...
+    pysimplevalidate.ValidationException: '31' is not a day in the month of September 2019

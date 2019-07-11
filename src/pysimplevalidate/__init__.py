@@ -9,7 +9,7 @@ import datetime
 import re
 import time
 
-__version__ = '0.2.8'
+__version__ = '0.2.9'
 
 MAX_ERROR_STR_LEN = 50 # Used by _errstr()
 
@@ -328,6 +328,8 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
     4
     """
 
+    assert _numType in ('num', 'int', 'float')
+
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, allowRegexes=None, blockRegexes=blockRegexes)
     _validateParamsFor_validateNum(min=min, max=max, lessThan=lessThan, greaterThan=greaterThan)
@@ -341,11 +343,13 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
                 return float(value)
             except ValueError:
                 return value # Return the value as is.
-        if (_numType == 'num' and '.' not in value) or (_numType == 'int'):
+        elif (_numType == 'num' and '.' not in value) or (_numType == 'int'):
             try:
                 return int(value)
             except ValueError:
                 return value # Return the value as is.
+        else:
+            assert False # This branch should never happen.
 
     # Validate the value's type (and convert value back to a number type).
     if (_numType == 'num' and '.' in value):
@@ -373,6 +377,8 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
             value = int(float(value))
         except:
             _raiseValidationException(_('%r is not an integer.') % (_errstr(value)), excMsg)
+    else:
+        assert False # This branch should never happen.
 
     # Validate against min argument.
     if min is not None and value < min:
@@ -427,7 +433,7 @@ def validateInt(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
         ...
     pysimplevalidate.ValidationException: 'forty two' is not an integer.
     """
-    return validateNum(value=value, blank=blank, strip=strip, allowRegexes=None,
+    return validateNum(value=value, blank=blank, strip=strip, allowRegexes=allowRegexes,
                        blockRegexes=blockRegexes, _numType='int', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
 
@@ -480,7 +486,7 @@ def validateFloat(value, blank=False, strip=None, allowRegexes=None, blockRegexe
     pysimplevalidate.ValidationException: Number must be greater than 3.
     """
 
-    return validateNum(value=value, blank=blank, strip=strip, allowRegexes=None,
+    return validateNum(value=value, blank=blank, strip=strip, allowRegexes=allowRegexes,
                        blockRegexes=blockRegexes, _numType='float', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
 
@@ -1399,6 +1405,8 @@ def validateDayOfMonth(value, year, month, blank=False, strip=None, allowRegexes
     pysimplevalidate.ValidationException: '29' is not a day in the month of February 2005
 
     """
+    year = int(year)
+    month = int(month)
     try:
         daysInMonth = calendar.monthrange(year, month)[1]
     except:
