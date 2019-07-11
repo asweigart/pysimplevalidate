@@ -1232,7 +1232,7 @@ def validateBool(value, blank=False, strip=None, allowRegexes=None, blockRegexes
         assert False, 'inner validateYesNo() call returned something that was not yesVal or noVal. This should never happen.'
 
 
-def validateState(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None, returnStateName=False):
+def validateUSState(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None, returnStateName=False):
     """Raises ValidationException if value is not a USA state.
     Returns the capitalized state abbreviation, unless returnStateName is True
     in which case it returns the titlecased state name.

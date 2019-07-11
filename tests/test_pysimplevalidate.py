@@ -23,47 +23,47 @@ def test__errstr():
 
 def test__validateGenericParameters():
     # Test typical allowlist arguments.
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=[], blocklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=['valid'], blocklistRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=[], blockRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=['valid'], blockRegexes=None) is None
 
     # Test typical blocklist arguments.
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=None) is None
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[]) is None
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=['x']) is None
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[('x', 'x')]) is None
-    assert pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[('x', 'x'), ('x', 'x')]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=None) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=[]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=['x']) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=[('x', 'x')]) is None
+    assert pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=[('x', 'x'), ('x', 'x')]) is None
 
     # Test invalid blank argument.
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=None, strip=None, allowlistRegexes=None, blocklistRegexes=[])
+        pysv._validateGenericParameters(blank=None, strip=None, allowRegexes=None, blockRegexes=[])
 
     # Test invalid blocklist arguments.
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=42)
+        pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=42)
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[('x', 42)])
+        pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=[('x', 42)])
     with pytest.raises(pysv.PySimpleValidateException):
-        pysv._validateGenericParameters(blank=True, strip=None, allowlistRegexes=None, blocklistRegexes=[(42, 'x')])
+        pysv._validateGenericParameters(blank=True, strip=None, allowRegexes=None, blockRegexes=[(42, 'x')])
 
 
 def test_blocklist():
     # Test typical usage.
     with pytest.raises(pysv.ValidationException):
-        pysv.validateStr('cat', blocklistRegexes=[r'c'])
+        pysv.validateStr('cat', blockRegexes=[r'c'])
     with pytest.raises(pysv.ValidationException):
-        pysv.validateStr('cat', blocklistRegexes=[r'\w'])
+        pysv.validateStr('cat', blockRegexes=[r'\w'])
     with pytest.raises(pysv.ValidationException):
-        pysv.validateStr('cat', blocklistRegexes=[r't$'])
+        pysv.validateStr('cat', blockRegexes=[r't$'])
     with pytest.raises(pysv.ValidationException):
-        pysv.validateStr('cat', blocklistRegexes=[r'x', r'y', r'c'])
+        pysv.validateStr('cat', blockRegexes=[r'x', r'y', r'c'])
 
     # Test that these do not raise an exception:
-    assert pysv.validateStr('cat', blocklistRegexes=[r'xyz']) == 'cat'
-    assert pysv.validateStr('cat', blocklistRegexes=[r'x', r'y', r'z']) == 'cat'
-    assert pysv.validateStr('cat', blocklistRegexes=[r'caterpillar']) == 'cat'
-    assert pysv.validateStr('cat', blocklistRegexes=[r'\d']) == 'cat'
-    assert pysv.validateStr('cat', blocklistRegexes=[r'\W']) == 'cat'
+    assert pysv.validateStr('cat', blockRegexes=[r'xyz']) == 'cat'
+    assert pysv.validateStr('cat', blockRegexes=[r'x', r'y', r'z']) == 'cat'
+    assert pysv.validateStr('cat', blockRegexes=[r'caterpillar']) == 'cat'
+    assert pysv.validateStr('cat', blockRegexes=[r'\d']) == 'cat'
+    assert pysv.validateStr('cat', blockRegexes=[r'\W']) == 'cat'
 
 
 
@@ -304,15 +304,15 @@ def test_validateYesNo():
         pysv.validateYesNo('N', caseSensitive=True)
 
 
-def test_validateState():
+def test_validateUSState():
     # Test typical usage.
-    assert pysv.validateState('CA') == 'CA'
-    assert pysv.validateState('California') == 'CA'
-    assert pysv.validateState('CA', returnStateName=True) == 'California'
+    assert pysv.validateUSState('CA') == 'CA'
+    assert pysv.validateUSState('California') == 'CA'
+    assert pysv.validateUSState('CA', returnStateName=True) == 'California'
 
     # Test typical failure cases.
     with pytest.raises(pysv.ValidationException):
-        pysv.validateState('gaseous')
+        pysv.validateUSState('gaseous')
 
 
 def test__validateParamsFor_validateChoice():
