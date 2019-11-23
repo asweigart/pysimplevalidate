@@ -7,16 +7,30 @@ from __future__ import absolute_import, division, print_function
 import calendar
 import datetime
 import re
+import sys
 import time
+from typing import Union, Pattern, Type, Dict, Tuple, Optional, Sequence, Any, List
 
-__version__ = '0.2.9'
+__version__ = '0.2.9'  # type: str
 
-MAX_ERROR_STR_LEN = 50 # Used by _errstr()
+# In Python 3, regex pattern classes are re.Pattern
+# In Python 2, regex pattern classes are SRE_Pattern but there's no exposed class that I can pass to isinstance.
+RE_PATTERN_TYPE = type(re.compile(''))
+
+if sys.version_info >= (3, 3):
+    import collections.abc
+    SEQUENCE_ABC = collections.abc.Sequence
+else:
+    import collections
+    SEQUENCE_ABC = collections.Sequence
+
+# Used by _errstr():
+MAX_ERROR_STR_LEN = 50  # type: int
 
 # From https://stackoverflow.com/a/5284410/1893164
-IPV4_REGEX = re.compile(r"""((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}""")
+IPV4_REGEX = re.compile(r"""((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}""")  # type: Pattern
 
-REGEX_TYPE = type(IPV4_REGEX)
+REGEX_TYPE = type(IPV4_REGEX)  # type: Type
 
 # From https://stackoverflow.com/a/17871737/1893164
 IPV6_REGEX = re.compile(r"""(
@@ -36,24 +50,25 @@ fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|     # fe80::7:8%eth0   fe80::7:8%
 ([0-9a-fA-F]{1,4}:){1,4}:
 ((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}
 (25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])           # 2001:db8:3:4::192.0.2.33  64:ff9b::192.0.2.33 (IPv4-Embedded IPv6 Address)
-)""", re.VERBOSE)
+)""", re.VERBOSE)  # type: Pattern
 
-URL_REGEX = re.compile(r"""(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)""")
+URL_REGEX = re.compile(r"""(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)""") # type: Pattern
 
 # https://emailregex.com/
-EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
+EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)") # type: Pattern
 
-USA_STATES = {'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'} # TODO - make STATES a dictionary mapping abbreviation to full name
-USA_STATES_REVERSED = dict([(USA_STATES[abbrev], abbrev) for abbrev in USA_STATES.keys()])
-USA_STATES_UPPER = dict([(abbrev, USA_STATES[abbrev].upper()) for abbrev in USA_STATES.keys()])
+# TODO - make STATES a dictionary mapping abbreviation to full name
+USA_STATES = {'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'} # type: Dict[str, str]
+USA_STATES_REVERSED = dict([(USA_STATES[abbrev], abbrev) for abbrev in USA_STATES.keys()]) # type: Dict[str, str]
+USA_STATES_UPPER = dict([(abbrev, USA_STATES[abbrev].upper()) for abbrev in USA_STATES.keys()]) # type: Dict[str, str]
 
-ENGLISH_MONTHS = {'JAN': 'January', 'FEB': 'February', 'MAR': 'March', 'APR': 'April', 'MAY': 'May', 'JUN': 'June', 'JUL': 'July', 'AUG': 'August', 'SEP': 'September', 'OCT': 'October', 'NOV': 'November', 'DEC': 'December'}
+ENGLISH_MONTHS = {'JAN': 'January', 'FEB': 'February', 'MAR': 'March', 'APR': 'April', 'MAY': 'May', 'JUN': 'June', 'JUL': 'July', 'AUG': 'August', 'SEP': 'September', 'OCT': 'October', 'NOV': 'November', 'DEC': 'December'} # type: Dict[str, str]
 
-ENGLISH_MONTH_NAMES = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+ENGLISH_MONTH_NAMES = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December') # type: Tuple[str, str, str, str, str, str, str, str, str, str, str, str]
 
-ENGLISH_DAYS_OF_WEEK = {'SUN': 'Sunday', 'MON': 'Monday', 'TUE': 'Tuesday', 'WED': 'Wednesday', 'THU': 'Thursday', 'FRI': 'Friday', 'SAT': 'Saturday'}
+ENGLISH_DAYS_OF_WEEK = {'SUN': 'Sunday', 'MON': 'Monday', 'TUE': 'Tuesday', 'WED': 'Wednesday', 'THU': 'Thursday', 'FRI': 'Friday', 'SAT': 'Saturday'} # type: Dict[str, str]
 
-DEFAULT_BLOCKLIST_RESPONSE = 'This response is invalid.'
+DEFAULT_BLOCKLIST_RESPONSE = 'This response is invalid.' # type: str
 
 
 class PySimpleValidateException(Exception):
@@ -68,16 +83,18 @@ class ValidationException(Exception):
 
 
 def _(s):
+    # type: (str) -> str
     """This function is a stub for implementing gettext and I18N for PySimpleValidate."""
     return s
 
 
 def _errstr(value):
+    # type: (str) -> str
     """Returns the value str, truncated to MAX_ERROR_STR_LEN characters. If
     it's truncated, the returned value will have '...' on the end.
     """
-
-    value = str(value) # We won't make the caller convert value to a string each time.
+    # We won't make the caller convert value to a string each time.
+    value = str(value)
     if len(value) > MAX_ERROR_STR_LEN:
         return value[:MAX_ERROR_STR_LEN] + '...'
     else:
@@ -85,6 +102,7 @@ def _errstr(value):
 
 
 def _getStrippedValue(value, strip):
+    # type: (str, Union[None, str, bool]) -> str
     """Like the strip() string method, except the strip argument describes
     different behavior:
 
@@ -103,6 +121,7 @@ def _getStrippedValue(value, strip):
 
 
 def _raiseValidationException(standardExcMsg, customExcMsg=None):
+    # type: (str, Optional[str]) -> None
     """Raise ValidationException with standardExcMsg, unless customExcMsg is specified."""
     if customExcMsg is None:
         raise ValidationException(str(standardExcMsg))
@@ -111,6 +130,7 @@ def _raiseValidationException(standardExcMsg, customExcMsg=None):
 
 
 def _prevalidationCheck(value, blank, strip, allowRegexes, blockRegexes, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> Tuple[bool, str]
     """Returns a tuple of two values: the first is a bool that tells the caller
     if they should immediately return True, the second is a new, possibly stripped
     value to replace the value passed for value parameter.
@@ -140,23 +160,24 @@ def _prevalidationCheck(value, blank, strip, allowRegexes, blockRegexes, excMsg=
 
     # Check the allowRegexes.
     if allowRegexes is not None:
-        for regex in allowRegexes:
-            if isinstance(regex, re.Pattern):
-                if regex.search(value) is not None:
+        for allowRegex in allowRegexes:
+            if isinstance(allowRegex, RE_PATTERN_TYPE):
+                if allowRegex.search(value) is not None:
                     return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
             else:
-                if re.search(regex, value) is not None:
+                if re.search(allowRegex, value) is not None:
                     return True, value # The value is in the allowlist, so return True to indicate that the caller should return value immediately.
 
     # Check the blockRegexes.
     if blockRegexes is not None:
         for blocklistRegexItem in blockRegexes:
-            if isinstance(blocklistRegexItem, str):
+            if isinstance(blocklistRegexItem, (str, RE_PATTERN_TYPE)):
                 regex, response = blocklistRegexItem, DEFAULT_BLOCKLIST_RESPONSE
             else:
-                regex, response = blocklistRegexItem
+                # NOTE: blockRegexes is potentially so many types at runtime, so ignore the type hint error on this next line:
+                regex, response = blocklistRegexItem # type: ignore
 
-            if isinstance(regex, re.Pattern) and regex.search(value) is not None:
+            if isinstance(regex, RE_PATTERN_TYPE) and regex.search(value) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
             elif re.search(regex, value) is not None:
                 _raiseValidationException(response, excMsg) # value is on a blocklist
@@ -165,6 +186,7 @@ def _prevalidationCheck(value, blank, strip, allowRegexes, blockRegexes, excMsg=
 
 
 def _validateGenericParameters(blank, strip, allowRegexes, blockRegexes):
+    # type: (bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]]) -> None
     """Returns None if the blank, strip, and blockRegexes parameters are valid
     of PySimpleValidate's validation functions have. Raises a PySimpleValidateException
     if any of the arguments are invalid."""
@@ -181,13 +203,12 @@ def _validateGenericParameters(blank, strip, allowRegexes, blockRegexes):
     if allowRegexes is None:
         allowRegexes = [] # allowRegexes defaults to a blank list.
 
-    try:
-        len(allowRegexes) # Make sure allowRegexes is a sequence.
-    except:
+    if not isinstance(allowRegexes, SEQUENCE_ABC):
         raise PySimpleValidateException('allowRegexes must be a sequence of regex_strs')
-    for response in allowRegexes:
-        if not isinstance(response[0], str):
-            raise PySimpleValidateException('allowRegexes must be a sequence of regex_strs')
+
+    for allowRegex in allowRegexes:
+        if not isinstance(allowRegex, (str, RE_PATTERN_TYPE)):
+            raise PySimpleValidateException('items in allowRegexes must be a regex pattern or regex str')
 
     # Check allowRegexes parameter (including each regex in it).
     # NOTE: blockRegexes is NOT the same format as allowlistRegex, it can
@@ -196,20 +217,20 @@ def _validateGenericParameters(blank, strip, allowRegexes, blockRegexes):
     if blockRegexes is None:
         blockRegexes = [] # blockRegexes defaults to a blank list.
 
-    try:
-        len(blockRegexes) # Make sure blockRegexes is a sequence of (regex_str, str) or strs.
-    except:
-        raise PySimpleValidateException('blockRegexes must be a sequence of (regex_str, str) tuples or regex_strs')
-    for response in blockRegexes:
-        if isinstance(response, str):
+    if not isinstance(blockRegexes, SEQUENCE_ABC):
+        raise PySimpleValidateException('blockRegexes must be a pattern, regex str, or sequence of (pattern, regex str) tuples')
+    for blockRegex in blockRegexes:
+        if isinstance(blockRegex, (str, RE_PATTERN_TYPE)):
             continue
-        if len(response) != 2:
-            raise PySimpleValidateException('blockRegexes must be a sequence of (regex_str, str) tuples or regex_strs')
-        if not isinstance(response[0], str) or not isinstance(response[1], str):
-            raise PySimpleValidateException('blockRegexes must be a sequence of (regex_str, str) tuples or regex_strs')
+        # NOTE: blockRegex is potentially so many types at runtime, so ignore the type hint error on this next line:
+        if len(blockRegex) != 2: # type: ignore
+            raise PySimpleValidateException('blockRegexes must be a pattern, regex str, or sequence of (pattern, regex str) tuples')
+        if not isinstance(blockRegex[0], str) or not isinstance(blockRegex[1], str): # type: ignore
+            raise PySimpleValidateException('blockRegexes must be a pattern, regex str, or sequence of (pattern, regex str) tuples')
 
 
 def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterThan=None):
+    # type: (Union[int, float, None], Union[int, float, None], Union[int, float, None], Union[int, float, None]) -> None
     """Raises an exception if the arguments are invalid. This is called by
     the validateNum(), validateInt(), and validateFloat() functions to
     check its arguments. This code was refactored out to a separate function
@@ -236,6 +257,7 @@ def _validateParamsFor_validateNum(min=None, max=None, lessThan=None, greaterTha
 
 
 def validateStr(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not a string. This function
     is identical to the built-in input() function, but also offers the
     PySimpleValidate features of not allowing blank values by default,
@@ -285,6 +307,7 @@ def validateStr(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
 
 def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, _numType='num',
                 min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], str, Optional[int], Optional[int], Optional[int], Optional[int], Optional[str]) -> Union[int, float, str]
     """Raises ValidationException if value is not a float or int.
 
     Returns value, so it can be used inline in an expression:
@@ -328,6 +351,8 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
     4
     """
 
+    # TODO - Add notes to the documentation that the parameters (except value) should all be passed using keyword arguments.
+
     assert _numType in ('num', 'int', 'float')
 
     # Validate parameters.
@@ -337,7 +362,7 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
     returnNow, value = _prevalidationCheck(value, blank, strip, allowRegexes, blockRegexes, excMsg)
     if returnNow:
         # If we can convert value to an int/float, then do so. For example,
-        # if an allowlist regex allows '42', then we should return 42/42.0.
+        # if an allowlist regex allows '42', then we should return 42 or 42.0.
         if (_numType == 'num' and '.' in value) or (_numType == 'float'):
             try:
                 return float(value)
@@ -355,18 +380,18 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
     if (_numType == 'num' and '.' in value):
         # We are expecting a "num" (float or int) type and the user entered a float.
         try:
-            value = float(value)
+            numericValue = float(value) # type: Union[int, float]
         except:
             _raiseValidationException(_('%r is not a number.') % (_errstr(value)), excMsg)
     elif (_numType == 'num' and '.' not in value):
         # We are expecting a "num" (float or int) type and the user entered an int.
         try:
-            value = int(value)
+            numericValue = int(value)
         except:
             _raiseValidationException(_('%r is not a number.') % (_errstr(value)), excMsg)
     elif _numType == 'float':
         try:
-            value = float(value)
+            numericValue = float(value)
         except:
             _raiseValidationException(_('%r is not a float.') % (_errstr(value)), excMsg)
     elif _numType == 'int':
@@ -374,33 +399,34 @@ def validateNum(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
             if float(value) % 1 != 0:
                 # The number is a float that doesn't end with ".0"
                 _raiseValidationException(_('%r is not an integer.') % (_errstr(value)), excMsg)
-            value = int(float(value))
+            numericValue = int(float(value))
         except:
             _raiseValidationException(_('%r is not an integer.') % (_errstr(value)), excMsg)
     else:
         assert False # This branch should never happen.
 
     # Validate against min argument.
-    if min is not None and value < min:
+    if min is not None and numericValue < min:
         _raiseValidationException(_('Number must be at minimum %s.') % (min), excMsg)
 
     # Validate against max argument.
-    if max is not None and value > max:
+    if max is not None and numericValue > max:
         _raiseValidationException(_('Number must be at maximum %s.') % (max), excMsg)
 
     # Validate against max argument.
-    if lessThan is not None and value >= lessThan:
+    if lessThan is not None and numericValue >= lessThan:
         _raiseValidationException(_('Number must be less than %s.') % (lessThan), excMsg)
 
     # Validate against max argument.
-    if greaterThan is not None and value <= greaterThan:
+    if greaterThan is not None and numericValue <= greaterThan:
         _raiseValidationException(_('Number must be greater than %s.') % (greaterThan), excMsg)
 
-    return value
+    return numericValue
 
 
 def validateInt(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[int], Optional[int], Optional[int], Optional[int], Optional[str]) -> Union[int, str]
     """Raises ValidationException if value is not a int.
 
     Returns value, so it can be used inline in an expression:
@@ -433,13 +459,16 @@ def validateInt(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
         ...
     pysimplevalidate.ValidationException: 'forty two' is not an integer.
     """
-    return validateNum(value=value, blank=blank, strip=strip, allowRegexes=allowRegexes,
+
+    # Even though validateNum *could* return a float, it won't if _numType is 'int', so ignore mypy's complaint:
+    return validateNum(value=value, blank=blank, strip=strip, allowRegexes=allowRegexes, # type: ignore
                        blockRegexes=blockRegexes, _numType='int', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
 
 
 def validateFloat(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
                 min=None, max=None, lessThan=None, greaterThan=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[int], Optional[int], Optional[int], Optional[int], Optional[str]) -> Union[float, str]
     """Raises ValidationException if value is not a float.
 
     Returns value, so it can be used inline in an expression:
@@ -486,6 +515,7 @@ def validateFloat(value, blank=False, strip=None, allowRegexes=None, blockRegexe
     pysimplevalidate.ValidationException: Number must be greater than 3.
     """
 
+    # Even though validateNum *could* return a int, it won't if _numType is 'float', so ignore mypy's complaint:
     return validateNum(value=value, blank=blank, strip=strip, allowRegexes=allowRegexes,
                        blockRegexes=blockRegexes, _numType='float', min=min, max=max,
                        lessThan=lessThan, greaterThan=greaterThan)
@@ -493,6 +523,7 @@ def validateFloat(value, blank=False, strip=None, allowRegexes=None, blockRegexe
 
 def _validateParamsFor_validateChoice(choices, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False, excMsg=None):
+    # type: (Sequence[Any], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], bool, bool, bool, Optional[str]) -> None
     """Raises PySimpleValidateException if the arguments are invalid. This is called by
     the validateChoice() function to check its arguments. This code was
     refactored out to a separate function so that the PyInputPlus module (or
@@ -501,6 +532,10 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=None, allowReg
 
     if not isinstance(caseSensitive, bool):
         raise PySimpleValidateException('caseSensitive argument must be a bool')
+
+    if not isinstance(choices, SEQUENCE_ABC):
+        raise PySimpleValidateException('choices arg must be a sequence')
+
 
     try:
         len(choices)
@@ -514,9 +549,6 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=None, allowReg
 
     _validateGenericParameters(blank=blank, strip=strip, allowRegexes=None, blockRegexes=blockRegexes)
 
-    for choice in choices:
-        if not isinstance(choice, str):
-            raise PySimpleValidateException('choice %r must be a string' % (_errstr(choice)))
     if lettered and len(choices) > 26:
         raise PySimpleValidateException('lettered argument cannot be True if there are more than 26 choices')
     if numbered and lettered:
@@ -531,6 +563,7 @@ def _validateParamsFor_validateChoice(choices, blank=False, strip=None, allowReg
 
 def validateChoice(value, choices, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
                    numbered=False, lettered=False, caseSensitive=False, excMsg=None):
+    # type: (str, Sequence[Any], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], bool, bool, bool, Optional[str]) -> str
     """Raises ValidationException if value is not one of the values in
     choices. Returns the selected choice.
 
@@ -590,7 +623,11 @@ def validateChoice(value, choices, blank=False, strip=None, allowRegexes=None, b
     _validateParamsFor_validateChoice(choices=choices, blank=blank, strip=strip, allowRegexes=None,
         blockRegexes=blockRegexes, numbered=numbered, lettered=lettered, caseSensitive=caseSensitive)
 
-    if '' in choices:
+    strChoices = [] # type: List[str]
+    for choice in choices:
+        strChoices.append(str(choice))
+
+    if '' in strChoices:
         # blank needs to be set to True here, otherwise '' won't be accepted as a choice.
         blank = True
 
@@ -598,23 +635,25 @@ def validateChoice(value, choices, blank=False, strip=None, allowRegexes=None, b
     if returnNow:
         return value
 
-    # Validate against choices.
-    if value in choices:
+    # Validate against strChoices.
+    if value in strChoices:
         return value
-    if numbered and value.isdigit() and 0 < int(value) <= len(choices): # value must be 1 to len(choices)
+    if numbered and value.isdigit() and 0 < int(value) <= len(strChoices): # value must be 1 to len(strChoices)
         # Numbered options begins at 1, not 0.
-        return choices[int(value) - 1] # -1 because the numbers are 1 to len(choices) but the index are 0 to len(choices) - 1
-    if lettered and len(value) == 1 and value.isalpha() and 0 < ord(value.upper()) - 64 <= len(choices):
+        return strChoices[int(value) - 1] # -1 because the numbers are 1 to len(strChoices) but the index are 0 to len(strChoices) - 1
+    if lettered and len(value) == 1 and value.isalpha() and 0 < ord(value.upper()) - 64 <= len(strChoices):
         # Lettered options are always case-insensitive.
-        return choices[ord(value.upper()) - 65]
-    if not caseSensitive and value.upper() in [choice.upper() for choice in choices]:
-        # Return the original item in choices that value has a case-insensitive match with.
-        return choices[[choice.upper() for choice in choices].index(value.upper())]
+        return strChoices[ord(value.upper()) - 65]
+    if not caseSensitive and value.upper() in [choice.upper() for choice in strChoices]:
+        # Return the original item in strChoices that value has a case-insensitive match with.
+        return strChoices[[choice.upper() for choice in strChoices].index(value.upper())]
 
     _raiseValidationException(_('%r is not a valid choice.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (Union[str, Sequence[str]], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> None
     """Raises PySimpleValidateException if the arguments are invalid. This is called by
     the validateTime() function to check its arguments. This code was
     refactored out to a separate function so that the PyInputPlus module (or
@@ -627,51 +666,57 @@ def _validateParamsFor__validateToDateTimeFormat(formats, blank=False, strip=Non
     if isinstance(formats, str):
         raise PySimpleValidateException('formats argument must be a non-str sequence of strftime format strings')
 
-    try:
-        len(formats)
-    except:
+    if not isinstance(formats, SEQUENCE_ABC):
         raise PySimpleValidateException('formats argument must be a non-str sequence of strftime format strings')
 
-    for format in formats:
+    for timeFormat in formats: # "format" name is used by the built-in format() function, so we use timeFormat instead.
         try:
-            time.strftime(format) # This will raise an exception if the format is invalid.
+            time.strftime(timeFormat) # This will raise an exception if the format is invalid.
         except:
             raise PySimpleValidateException('formats argument contains invalid strftime format strings')
 
 
 def _validateToDateTimeFormat(value, formats, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, Union[str, Sequence[str]], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> Union[datetime.datetime, str]
     # Validate parameters.
     _validateParamsFor__validateToDateTimeFormat(formats, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
 
+    if isinstance(formats, str):
+        # Ensure that `formats` is always a sequence of strings:
+        formats = [formats]
+
     returnNow, value = _prevalidationCheck(value, blank, strip, allowRegexes, blockRegexes, excMsg)
     if returnNow:
-        # If value can be converted to a datetime object, convert it.
-        try:
-            return datetime.datetime.strptime(value, format)
-        except ValueError:
-            return value # Return the value as is.
+        for timeFormat in formats:
+            # If value can be converted to a datetime object, convert it.
+            try:
+                return datetime.datetime.strptime(value, timeFormat)
+            except ValueError:
+                continue # If this format fails to parse, move on to the next format.
+        return value # Return the value as is.
 
     # Validate against the given formats.
-    for format in formats:
+    for timeFormat in formats:
         try:
-            return datetime.datetime.strptime(value, format)
+            return datetime.datetime.strptime(value, timeFormat)
         except ValueError:
             continue # If this format fails to parse, move on to the next format.
 
     _raiseValidationException(_('%r is not a valid time.') % (value), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
-
-def validateTime(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
-                 formats=('%H:%M:%S', '%H:%M', '%X'), excMsg=None):
+def validateTime(value, formats=('%H:%M:%S', '%H:%M', '%X'), blank=False, strip=None, allowRegexes=None, blockRegexes=None,
+                 excMsg=None):
+    # type: (str, Union[str, Sequence[str]], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> Union[datetime.time, str]
     """Raises ValidationException if value is not a time formatted in one
     of the formats formats. Returns a datetime.time object of value.
 
     * value (str): The value being validated as a time.
+    * formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid time.
     * blank (bool): If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blockRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
-    * formats: A tuple of strings that can be passed to time.strftime, dictating the possible formats for a valid time.
     * excMsg (str): A custom message to use in the raised ValidationException.
 
     >>> import pysimplevalidate as pysv
@@ -692,13 +737,19 @@ def validateTime(value, blank=False, strip=None, allowRegexes=None, blockRegexes
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
         dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
-        return datetime.time(dt.hour, dt.minute, dt.second, dt.microsecond)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid time.') % (_errstr(value)), excMsg)
 
+    # `dt` could be a str if `value` matched one of the `allowRegexes`.
+    if isinstance(dt, str):
+        return dt # Return the string value as-is.
+    # At this point, dt is definitely a time object, so ignore mypy's complaints:
+    return datetime.time(dt.hour, dt.minute, dt.second, dt.microsecond) # type: ignore
 
-def validateDate(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
-                 formats=('%Y/%m/%d', '%y/%m/%d', '%m/%d/%Y', '%m/%d/%y', '%x'), excMsg=None):
+
+def validateDate(value, formats=('%Y/%m/%d', '%y/%m/%d', '%m/%d/%Y', '%m/%d/%y', '%x'),
+                 blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, Union[str, Sequence[str]], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> Union[datetime.date, str]
     """Raises ValidationException if value is not a time formatted in one
     of the formats formats. Returns a datetime.date object of value.
 
@@ -723,15 +774,21 @@ def validateDate(value, blank=False, strip=None, allowRegexes=None, blockRegexes
     # Reuse the logic in _validateToDateTimeFormat() for this function.
     try:
         dt = _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
-        return datetime.date(dt.year, dt.month, dt.day)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid date.') % (_errstr(value)), excMsg)
 
+    # `dt` could be a str if `value` matched one of the `allowRegexes`.
+    if isinstance(dt, str):
+        return dt # Return the string value as-is.
+    # At this point, dt is definitely a date object, so ignore mypy's complaints:
+    return datetime.date(dt.year, dt.month, dt.day) # type: ignore
 
-def validateDatetime(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None,
-                     formats=('%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S',
-                              '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%x %H:%M',
-                              '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S'), excMsg=None):
+
+def validateDatetime(value, formats=('%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S', # type: ignore
+                                     '%Y/%m/%d %H:%M', '%y/%m/%d %H:%M', '%m/%d/%Y %H:%M', '%m/%d/%y %H:%M', '%x %H:%M',
+                                     '%Y/%m/%d %H:%M:%S', '%y/%m/%d %H:%M:%S', '%m/%d/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%x %H:%M:%S'),
+                     blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, Union[str, Sequence[str]], bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> Union[datetime.datetime, str]
     """Raises ValidationException if value is not a datetime formatted in one
     of the formats formats. Returns a datetime.datetime object of value.
 
@@ -759,9 +816,11 @@ def validateDatetime(value, blank=False, strip=None, allowRegexes=None, blockReg
         return _validateToDateTimeFormat(value, formats, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid date and time.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateFilename(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not a valid filename.
     Filenames can't contain \\ / : * ? " < > | or end with a space.
     Returns the value argument.
@@ -799,6 +858,7 @@ def validateFilename(value, blank=False, strip=None, allowRegexes=None, blockReg
 
 
 def validateFilepath(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None, mustExist=False):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str], bool) -> str
     r"""Raises ValidationException if value is not a valid filename.
     Filenames can't contain \\ / : * ? " < > |
     Returns the value argument.
@@ -837,6 +897,7 @@ def validateFilepath(value, blank=False, strip=None, allowRegexes=None, blockReg
 
 
 def validateIP(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not an IPv4 or IPv6 address.
     Returns the value argument.
 
@@ -875,19 +936,19 @@ def validateIP(value, blank=False, strip=None, allowRegexes=None, blockRegexes=N
     try:
         try:
             # Check if value is an IPv4 address.
-            if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes):
-                return value
+            return validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
         except:
             pass # Go on to check if it's an IPv6 address.
 
         # Check if value is an IPv6 address.
-        if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes):
-            return value
+        return validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid IP address.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateIPv4(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not an IPv4 address.
     Returns the value argument.
 
@@ -919,13 +980,14 @@ def validateIPv4(value, blank=False, strip=None, allowRegexes=None, blockRegexes
 
     try:
         # Check if value is an IPv4 address.
-        if validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes):
-            return value
+        return validateRegex(value=value, regex=IPV4_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid IPv4 address.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateIPv6(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not an IPv6 address.
     Returns the value argument.
 
@@ -956,13 +1018,14 @@ def validateIPv6(value, blank=False, strip=None, allowRegexes=None, blockRegexes
     # Reuse the logic in validateRegex()
     try:
         # Check if value is an IPv6 address.
-        if validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes):
-            return value
+        return validateRegex(value=value, regex=IPV6_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid IPv6 address.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateRegex(value, regex, flags=0, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, Union[str, Pattern], int, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value does not match the regular expression in regex.
     Returns the value argument.
 
@@ -1009,9 +1072,11 @@ def validateRegex(value, regex, flags=0, blank=False, strip=None, allowRegexes=N
         return mo.group()
     else:
         _raiseValidationException(_('%r does not match the specified pattern.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateRegexStr(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> Union[str, Pattern]
     """Raises ValidationException if value can't be used as a regular expression string.
     Returns the value argument as a regex object.
 
@@ -1049,9 +1114,11 @@ def validateRegexStr(value, blank=False, strip=None, allowRegexes=None, blockReg
         return re.compile(value)
     except Exception as ex:
         _raiseValidationException(_('%r is not a valid regular expression: %s') % (_errstr(value), ex), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateURL(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not a URL.
     Returns the value argument.
 
@@ -1085,18 +1152,18 @@ def validateURL(value, blank=False, strip=None, allowRegexes=None, blockRegexes=
 
     # Reuse the logic in validateRegex()
     try:
-        result = validateRegex(value=value, regex=URL_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
-        if result is not None:
-            return result
+        return validateRegex(value=value, regex=URL_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
     except ValidationException:
         # 'localhost' is also an acceptable URL:
         if value == 'localhost':
-            return value
+            return 'localhost'
 
         _raiseValidationException(_('%r is not a valid URL.') % (value), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateEmail(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not an email address.
     Returns the value argument.
 
@@ -1118,14 +1185,13 @@ def validateEmail(value, blank=False, strip=None, allowRegexes=None, blockRegexe
 
     # Reuse the logic in validateRegex()
     try:
-        result = validateRegex(value=value, regex=EMAIL_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
-        if result is not None:
-            return result
+        return validateRegex(value=value, regex=EMAIL_REGEX, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
     except ValidationException:
         _raiseValidationException(_('%r is not a valid email address.') % (value), excMsg)
-
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 def validateYesNo(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, yesVal='yes', noVal='no', caseSensitive=False, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], str, str, bool, Optional[str]) -> str
     """Raises ValidationException if value is not a yes or no response.
     Returns the yesVal or noVal argument, not value.
 
@@ -1184,17 +1250,22 @@ def validateYesNo(value, blank=False, strip=None, allowRegexes=None, blockRegexe
             return noVal
 
     _raiseValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), yesVal, noVal), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateBool(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, trueVal='True', falseVal='False', caseSensitive=False, excMsg=None):
-    """Raises ValidationException if value is not an email address.
-    Returns the yesVal or noVal argument, not value.
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], str, str, bool, Optional[str]) -> Union[bool, str]
+    """Raises ValidationException if value is not a "true" or "false" value.
+    Returns the trueVal or falseVal argument, not value.
 
     * value (str): The value being validated as an email address.
     * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blockRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
+    * trueVal TODO
+    * falseVal TODO
+    * caseInsensitive TODO
     * excMsg (str): A custom message to use in the raised ValidationException.
 
     >>> import pysimplevalidate as pysv
@@ -1227,7 +1298,10 @@ def validateBool(value, blank=False, strip=None, allowRegexes=None, blockRegexes
     if (trueVal[0] == falseVal[0]) or (not caseSensitive and trueVal[0].upper() == falseVal[0].upper()):
         raise PySimpleValidateException('first character of trueVal and noVal arguments must be different')
 
-    result = validateYesNo(value, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes, yesVal=trueVal, noVal=falseVal, caseSensitive=caseSensitive, excMsg=None)
+    try:
+        result = validateYesNo(value, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes, yesVal=trueVal, noVal=falseVal, caseSensitive=caseSensitive, excMsg=None)
+    except ValidationException:
+        _raiseValidationException(_('%r is not a valid %s/%s response.') % (_errstr(value), trueVal, falseVal), excMsg)
 
     # Return a bool value instead of a string.
     if result == trueVal:
@@ -1239,6 +1313,7 @@ def validateBool(value, blank=False, strip=None, allowRegexes=None, blockRegexes
 
 
 def validateUSState(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None, returnStateName=False):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str], bool) -> str
     """Raises ValidationException if value is not a USA state.
     Returns the capitalized state abbreviation, unless returnStateName is True
     in which case it returns the titlecased state name.
@@ -1283,6 +1358,7 @@ def validateUSState(value, blank=False, strip=None, allowRegexes=None, blockRege
             return USA_STATES_REVERSED[value.title()] # Return abbreviation.
 
     _raiseValidationException(_('%r is not a state.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateName():
@@ -1298,6 +1374,7 @@ def validatePhone():
 
 
 def validateMonth(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, monthNames=ENGLISH_MONTHS, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Dict[str, str], Optional[str]) -> str
     """Raises ValidationException if value is not a month, like 'Jan' or 'March'.
     Returns the titlecased month.
 
@@ -1325,7 +1402,6 @@ def validateMonth(value, blank=False, strip=None, allowRegexes=None, blockRegexe
     if returnNow:
         return value
 
-
     try:
         if (monthNames == ENGLISH_MONTHS) and (1 <= int(value) <= 12): # This check here only applies to months, not when validateDayOfWeek() calls this function.
             return ENGLISH_MONTH_NAMES[int(value) - 1]
@@ -1342,9 +1418,11 @@ def validateMonth(value, blank=False, strip=None, allowRegexes=None, blockRegexe
         return value.title()
 
     _raiseValidationException(_('%r is not a month.') % (_errstr(value)), excMsg)
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateDayOfWeek(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, dayNames=ENGLISH_DAYS_OF_WEEK, excMsg=None):
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Dict[str, str], Optional[str]) -> str
     """Raises ValidationException if value is not a day of the week, such as 'Mon' or 'Friday'.
     Returns the titlecased day of the week.
 
@@ -1373,10 +1451,11 @@ def validateDayOfWeek(value, blank=False, strip=None, allowRegexes=None, blockRe
     except:
         # Replace the exception message.
         _raiseValidationException(_('%r is not a day of the week') % (_errstr(value)), excMsg)
-
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 def validateDayOfMonth(value, year, month, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+    # type: (str, int, int, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> int
     """Raises ValidationException if value is not a day of the month, from
     1 to 28, 29, 30, or 31 depending on the month and year.
     Returns value.
@@ -1413,15 +1492,14 @@ def validateDayOfMonth(value, year, month, blank=False, strip=None, allowRegexes
         raise PySimpleValidateException('invalid arguments for year and/or month')
 
     try:
-        return validateInt(value, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes, min=1, max=daysInMonth)
+        return int(validateInt(value, blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes, min=1, max=daysInMonth))
     except:
         # Replace the exception message.
         _raiseValidationException(_('%r is not a day in the month of %s %s') % (_errstr(value), ENGLISH_MONTH_NAMES[month - 1], year), excMsg)
-
-
-
+    assert False, 'The execution reached this point, even though the previous line should have raised an exception.'
 
 
 if __name__ == '__main__':
-    import doctest
+    pass
+    #import doctest
     #doctest.testmod()

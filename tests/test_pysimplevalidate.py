@@ -8,6 +8,8 @@ import pysimplevalidate as pysv
 
 # TODO - These tests don't cover non-English strings.
 
+# TODO - Test _prevalidationCheck
+
 def test__errstr():
     pysv.MAX_ERROR_STR_LEN == 50 # Make sure this constant hasn't changed.
 
