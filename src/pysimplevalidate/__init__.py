@@ -1,7 +1,6 @@
 # PySimpleValidate
 # By Al Sweigart al@inventwithpython.com
 
-
 from __future__ import absolute_import, division, print_function
 
 import calendar
@@ -13,7 +12,7 @@ import time
 from typing import Union, Pattern, Type, Dict, Tuple, Optional, Sequence, Any, List
 
 
-__version__ = "0.2.9"  # type: str
+__version__ = "0.2.10"  # type: str
 
 # In Python 3, regex pattern classes are re.Pattern
 # In Python 2, regex pattern classes are SRE_Pattern but there's no exposed class that I can pass to isinstance.
