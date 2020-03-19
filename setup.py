@@ -28,7 +28,7 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     test_suite='tests',
-    install_requires=[],
+    install_requires=['typing;python_version<"3.5"'],
     keywords="input validation text string",
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -46,5 +46,6 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
 )

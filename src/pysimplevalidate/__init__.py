@@ -9,7 +9,9 @@ import datetime
 import re
 import sys
 import time
+
 from typing import Union, Pattern, Type, Dict, Tuple, Optional, Sequence, Any, List
+
 
 __version__ = "0.2.9"  # type: str
 
@@ -1082,6 +1084,8 @@ def validateFilename(value, blank=False, strip=None, allowRegexes=None, blockReg
         ...
     pysimplevalidate.ValidationException: '/full/path/to/foo.txt' is not a valid filename.
     """
+
+    # TODO: Did I capture the Linux/macOS invalid file characters too, or just Windows's?
 
     returnNow, value = _prevalidationCheck(value, blank, strip, allowRegexes, blockRegexes, excMsg)
     if returnNow:

@@ -77,9 +77,9 @@ def test_validateNum():
     assert pysv.validateNum(3.14)
 
     # Test typical validation failure cases.
-    with pytest.raises(pysv.ValidationException, message="'ABC' is not a number."):
+    with pytest.raises(pysv.ValidationException, match="'ABC' is not a number."):
         pysv.validateNum('ABC')
-    with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
+    with pytest.raises(pysv.ValidationException, match='Blank values are not allowed.'):
         pysv.validateNum('')
 
     # Test for when blanks are allowed.
@@ -89,7 +89,7 @@ def test_validateNum():
     assert pysv.validateNum('XXX', blank=True, strip='X') == ''
 
     # Test for when blanks aren't allowed and value strips to a blank value.
-    with pytest.raises(pysv.ValidationException, message="' ' is not a number."):
+    with pytest.raises(pysv.ValidationException, match="' ' is not a number."):
         pysv.validateNum(' ', blank=True, strip=False)
 
     # Duplicate tests as above, but setting _numType explicitly.
@@ -97,12 +97,12 @@ def test_validateNum():
     assert pysv.validateNum('3.14', _numType='num')
     assert pysv.validateNum(42, _numType='num')  # Non-strings should be fine.
     assert pysv.validateNum(3.14, _numType='num')
-    with pytest.raises(pysv.ValidationException, message="'ABC' is not a number."):
+    with pytest.raises(pysv.ValidationException, match="'ABC' is not a number."):
         pysv.validateNum('ABC', _numType='num')
-    with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
+    with pytest.raises(pysv.ValidationException, match='Blank values are not allowed.'):
         pysv.validateNum('', _numType='num')
     assert pysv.validateNum('', blank=True, _numType='num') == ''
-    with pytest.raises(pysv.ValidationException, message="' ' is not a number."):
+    with pytest.raises(pysv.ValidationException, match="' ' is not a number."):
         pysv.validateNum(' ', blank=True, strip=False, _numType='num')
 
     # TODO - need to test strip, blocklistRegexes
@@ -113,33 +113,33 @@ def test_validateInt():
     assert pysv.validateInt(42)  # Non-strings should be fine.
 
     # Test typical validation failures.
-    with pytest.raises(pysv.ValidationException, message="'3.14' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="'3.14' is not an integer."):
         pysv.validateInt('3.14')
-    with pytest.raises(pysv.ValidationException, message="'3.14' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="'3.14' is not an integer."):
         pysv.validateInt(3.14)
-    with pytest.raises(pysv.ValidationException, message="'ABC' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="'ABC' is not an integer."):
         pysv.validateInt('ABC')
 
     # Test blank settings.
-    with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
+    with pytest.raises(pysv.ValidationException, match='Blank values are not allowed.'):
         pysv.validateInt('')
     assert pysv.validateInt('', blank=True) == ''
-    with pytest.raises(pysv.ValidationException, message="' ' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="' ' is not an integer."):
         pysv.validateInt(' ', blank=True, strip=False)
 
     # Duplicate the above tests, but setting _numType explicitly:
     assert pysv.validateNum('42', _numType='int')
-    with pytest.raises(pysv.ValidationException, message="'3.14' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="'3.14' is not an integer."):
         pysv.validateNum('3.14', _numType='int')
     assert pysv.validateNum(42, _numType='int')  # Non-strings should be fine.
-    with pytest.raises(pysv.ValidationException, message="'3.14' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="'3.14' is not an integer."):
         pysv.validateNum(3.14, _numType='int')
-    with pytest.raises(pysv.ValidationException, message="'ABC' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="'ABC' is not an integer."):
         pysv.validateNum('ABC', _numType='int')
-    with pytest.raises(pysv.ValidationException, message='Blank values are not allowed.'):
+    with pytest.raises(pysv.ValidationException, match='Blank values are not allowed.'):
         pysv.validateNum('', _numType='int')
     assert pysv.validateNum('', blank=True, _numType='int') == ''
-    with pytest.raises(pysv.ValidationException, message="' ' is not an integer."):
+    with pytest.raises(pysv.ValidationException, match="' ' is not an integer."):
         pysv.validateNum(' ', blank=True, strip=False, _numType='int')
 
 
@@ -184,7 +184,7 @@ def test_validateChoice():
         pysv.validateChoice('a', [str(i) for i in range(27)], lettered=True)
 
     # Test for typical validation failure.
-    with pytest.raises(pysv.ValidationException, message="'XXX' is not a valid choice."):
+    with pytest.raises(pysv.ValidationException, match="'XXX' is not a valid choice."):
         pysv.validateChoice('XXX', ['42', 'cat', 'dog'])
 
 
@@ -196,7 +196,7 @@ def test_validateDate():
     assert pysv.validateDate('7/10/18')
 
     # Test for typical validation failure.
-    with pytest.raises(pysv.ValidationException): #, message="'2018/13/10' is not a valid date."):
+    with pytest.raises(pysv.ValidationException): #, match="'2018/13/10' is not a valid date."):
         pysv.validateDate('2018/13/10')
 
     # TODO - finish
@@ -212,17 +212,17 @@ def test_validateTime():
     assert pysv.validateTime('7:00:00') == datetime.time(7, 0, 0)
 
     # Test for typical validation failure.
-    with pytest.raises(pysv.ValidationException): #, message="'25:00' is not a valid time."):
+    with pytest.raises(pysv.ValidationException): #, match="'25:00' is not a valid time."):
         pysv.validateTime('25:00')
-    with pytest.raises(pysv.ValidationException): #, message="'25:0:00' is not a valid time."):
+    with pytest.raises(pysv.ValidationException): #, match="'25:0:00' is not a valid time."):
         pysv.validateTime('25:0:00')
-    with pytest.raises(pysv.ValidationException): #, message="'7:61' is not a valid time."):
+    with pytest.raises(pysv.ValidationException): #, match="'7:61' is not a valid time."):
         pysv.validateTime('7:61')
-    with pytest.raises(pysv.ValidationException): #, message="'7:61:00' is not a valid time."):
+    with pytest.raises(pysv.ValidationException): #, match="'7:61:00' is not a valid time."):
         pysv.validateTime('7:61:00')
-    with pytest.raises(pysv.ValidationException): #, message="'7:30:62' is not a valid time."):
+    with pytest.raises(pysv.ValidationException): #, match="'7:30:62' is not a valid time."):
         pysv.validateTime('7:30:62')
-    with pytest.raises(pysv.ValidationException): #, message="'XXX' is not a valid time."):
+    with pytest.raises(pysv.ValidationException): #, match="'XXX' is not a valid time."):
         pysv.validateTime('XXX')
 
     # TODO - finish
@@ -326,22 +326,22 @@ def test__validateParamsFor_validateChoice():
     pysv._validateParamsFor_validateChoice(['dog', 'cat'])
 
     # Test typical failure cases.
-    with pytest.raises(pysv.PySimpleValidateException, message='choices arg must be a sequence'):
+    with pytest.raises(pysv.PySimpleValidateException, match='choices arg must be a sequence'):
         pysv._validateParamsFor_validateChoice(42)
 
-    with pytest.raises(pysv.PySimpleValidateException, message='choices must have at least two items if blank is False'):
+    with pytest.raises(pysv.PySimpleValidateException, match='choices must have at least two items if blank is False'):
         pysv._validateParamsFor_validateChoice([])
 
-    with pytest.raises(pysv.PySimpleValidateException, message='choices must have at least one item'):
+    with pytest.raises(pysv.PySimpleValidateException, match='choices must have at least one item'):
         pysv._validateParamsFor_validateChoice([], blank=True)
 
-    with pytest.raises(pysv.PySimpleValidateException, message='choices must have at least one item'):
+    with pytest.raises(pysv.PySimpleValidateException, match='choices must have at least one item'):
         pysv._validateParamsFor_validateChoice([], blank=True)
 
-    with pytest.raises(pysv.PySimpleValidateException, message='duplicate entries in choices argument'):
+    with pytest.raises(pysv.PySimpleValidateException, match='duplicate entries in choices argument'):
         pysv._validateParamsFor_validateChoice(['dog', 'dog'], caseSensitive=False)
 
-    with pytest.raises(pysv.PySimpleValidateException, message='duplicate case-insensitive entries in choices argument'):
+    with pytest.raises(pysv.PySimpleValidateException, match='duplicate case-insensitive entries in choices argument'):
         pysv._validateParamsFor_validateChoice(['dog', 'DOG'], caseSensitive=False)
 
     # "Duplicates" are fine if they have different cases:
@@ -354,16 +354,16 @@ def test__validateParamsFor_validateNum():
     pysv._validateParamsFor_validateNum()
 
     # Test typical failure cases.
-    with pytest.raises(pysv.PySimpleValidateException, message=' min argument must be int, float, or NoneType'):
+    with pytest.raises(pysv.PySimpleValidateException, match='min argument must be int, float, or NoneType'):
         pysv._validateParamsFor_validateNum(min='invalid')
 
-    with pytest.raises(pysv.PySimpleValidateException, message=' max argument must be int, float, or NoneType'):
+    with pytest.raises(pysv.PySimpleValidateException, match='max argument must be int, float, or NoneType'):
         pysv._validateParamsFor_validateNum(max='invalid')
 
-    with pytest.raises(pysv.PySimpleValidateException, message=' lessThan argument must be int, float, or NoneType'):
+    with pytest.raises(pysv.PySimpleValidateException, match='lessThan argument must be int, float, or NoneType'):
         pysv._validateParamsFor_validateNum(lessThan='invalid')
 
-    with pytest.raises(pysv.PySimpleValidateException, message=' greaterThan argument must be int, float, or NoneType'):
+    with pytest.raises(pysv.PySimpleValidateException, match='greaterThan argument must be int, float, or NoneType'):
         pysv._validateParamsFor_validateNum(greaterThan='invalid')
 
 def test_validateFilename():
@@ -371,23 +371,23 @@ def test_validateFilename():
     assert pysv.validateFilename('foobar.txt') == 'foobar.txt'
 
     # Test typical failure cases.
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('\\')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('/')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename(':')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('*')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('?')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('"')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('<')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('>')
-    with pytest.raises(pysv.ValidationException, message='is not a valid filename'):
+    with pytest.raises(pysv.ValidationException, match='is not a valid filename'):
         pysv.validateFilename('|')
 
 if __name__ == '__main__':
