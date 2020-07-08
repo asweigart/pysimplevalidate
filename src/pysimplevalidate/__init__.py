@@ -12,7 +12,7 @@ import time
 from typing import Union, Pattern, Type, Dict, Tuple, Optional, Sequence, Any, List
 
 
-__version__ = "0.2.10"  # type: str
+__version__ = "0.2.11"  # type: str
 
 # In Python 3, regex pattern classes are re.Pattern
 # In Python 2, regex pattern classes are SRE_Pattern but there's no exposed class that I can pass to isinstance.
@@ -1138,7 +1138,7 @@ def validateFilepath(
     raise NotImplementedError()
 
 
-def validateIP(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
+def validateIp(value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, excMsg=None):
     # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Optional[str]) -> str
     """Raises ValidationException if value is not an IPv4 or IPv6 address.
     Returns the value argument.

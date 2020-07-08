@@ -7,7 +7,7 @@ name = "pypi"
 coverage = "*"
 tox = "*"
 detox = "*"
-pysimplevalidate = {editable = true, path = "."}
+pysimplevalidate = {editable = true,path = "."}
 pytest = "*"
 
 [dev-packages]
