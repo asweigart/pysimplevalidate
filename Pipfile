@@ -7,10 +7,10 @@ name = "pypi"
 coverage = "*"
 tox = "*"
 detox = "*"
-pysimplevalidate = {editable = true,path = "."}
+pysimplevalidate = {editable = true, path = "."}
 pytest = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "3.9"
