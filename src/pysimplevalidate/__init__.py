@@ -11,6 +11,11 @@ import time
 
 from typing import Union, Pattern, Type, Dict, Tuple, Optional, Sequence, Any, List
 
+import gettext, os
+FOLDER_OF_THIS_FILE = os.path.dirname(os.path.abspath(__file__))
+enLang = gettext.translation('pysimplevalidate', localedir=os.path.join(FOLDER_OF_THIS_FILE, 'locale'), languages=['en'])
+enLang.install()
+# TODO - should i have a setLang() function?
 
 __version__ = "0.2.12"  # type: str
 
@@ -177,10 +182,10 @@ class ValidationException(Exception):
     pass
 
 
-def _(s):
-    # type: (str) -> str
-    """This function is a stub for implementing gettext and I18N for PySimpleValidate."""
-    return s
+#def _(s):
+#    # type: (str) -> str
+#    """This function is a stub for implementing gettext and I18N for PySimpleValidate."""
+#    return s
 
 
 def _errstr(value):
@@ -1777,7 +1782,7 @@ def validateDayOfWeek(
         )
     except:
         # Replace the exception message.
-        _raiseValidationException(_("%r is not a day of the week") % (_errstr(value)), excMsg)
+        _raiseValidationException(_("%r is not a day of the week.") % (_errstr(value)), excMsg)
     assert False, "The execution reached this point, even though the previous line should have raised an exception."
 
 
@@ -1833,7 +1838,7 @@ def validateDayOfMonth(value, year, month, blank=False, strip=None, allowRegexes
     except:
         # Replace the exception message.
         _raiseValidationException(
-            _("%r is not a day in the month of %s %s") % (_errstr(value), ENGLISH_MONTH_NAMES[month - 1], year), excMsg
+            _("%r is not a day in the month of %s %s.") % (_errstr(value), ENGLISH_MONTH_NAMES[month - 1], year), excMsg
         )
     assert False, "The execution reached this point, even though the previous line should have raised an exception."
 
