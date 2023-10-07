@@ -68,7 +68,16 @@ URL_REGEX = re.compile(
 )  # type: Pattern
 
 # https://emailregex.com/
-EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")  # type: Pattern
+EMAIL_REGEX = re.compile(r"""(
+    ^                      # Start of the string
+    (?!.*--)               # Negative lookahead to disallow consecutive hyphens
+    [a-zA-Z]               # First character must be a letter (uppercase or lowercase)
+    [a-zA-Z0-9._%+-]*      # Followed by letters, digits, and allowed special characters
+    @                      # "@" symbol
+    [a-zA-Z0-9.-]+         # Domain part with letters, digits, period, and hyphen
+    \.[a-zA-Z]{2,}         # Top-level domain with at least two letters
+    $                      # End of the string
+)""", re.VERBOSE)
 
 # TODO - make STATES a dictionary mapping abbreviation to full name
 USA_STATES = {
