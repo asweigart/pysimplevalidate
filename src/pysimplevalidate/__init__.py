@@ -1693,28 +1693,43 @@ def validatePhone():
 
 
 def validateMonth(
-    value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, monthNames=ENGLISH_MONTHS, excMsg=None
+    value, blank=False, strip=None, allowRegexes=None, blockRegexes=None, monthNames=ENGLISH_MONTHS, excMsg=None,
+    returnNumber=False, returnAbbreviation=False
 ):
-    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Dict[str, str], Optional[str]) -> str
+    # type: (str, bool, Union[None, str, bool], Union[None, Sequence[Union[Pattern, str]]], Union[None, Sequence[Union[Pattern, str, Sequence[Union[Pattern, str]]]]], Dict[str, str], Optional[str], bool, bool) -> Union[str, int]
     """Raises ValidationException if value is not a month, like 'Jan' or 'March'.
-    Returns the titlecased month.
+    Returns the titlecased month, unless
+      a. ``returnNumber`` is ``True``, in which case it returns the number of the
+         month, e.g. 1 for January, 2 for February, ..., 12 for December
+      b. ``returnAbbreviation`` is ``True``, in which case it returns the
+         three-letter abbreviation for the month, e.g. Jan for January,
+         Feb for February, ..., Dec for December
 
-    * value (str): The value being validated as an email address.
+    * value (str): The value being validated as a month.
     * blank (bool):  If True, a blank string will be accepted. Defaults to False.
     * strip (bool, str, None): If None, whitespace is stripped from value. If a str, the characters in it are stripped from value. If False, nothing is stripped.
     * allowRegexes (Sequence, None): A sequence of regex str that will explicitly pass validation, even if they aren't numbers.
     * blockRegexes (Sequence, None): A sequence of regex str or (regex_str, response_str) tuples that, if matched, will explicitly fail validation.
     * monthNames (Mapping): A mapping of uppercase month abbreviations to month names, i.e. {'JAN': 'January', ... }. The default provides English month names.
     * excMsg (str): A custom message to use in the raised ValidationException.
+    * returnNumber (bool): If True, return 1 for January, 2 for February, ..., 12 for December
+    * returnAbbreviation (bool): If True, return Jan for January, Feb for February, ..., Dec for December
 
     >>> import pysimplevalidate as pysv
     >>> pysv.validateMonth('Jan')
     'January'
     >>> pysv.validateMonth('MARCH')
     'March'
+    >>> pysv.validateMonth('Jan', returnNumber=True)
+    1
+    >>> pysv.validateMonth('January', returnAbbreviation=True)
+    'Jan'
     """
 
-    # returns full month name, e.g. 'January'
+    # returns
+    # - full month name, e.g. 'January', or
+    # - month number, e.g. 1 for January, or
+    # - abbreviated month name, e.g. 'Jan'
 
     # Validate parameters.
     _validateGenericParameters(blank=blank, strip=strip, allowRegexes=allowRegexes, blockRegexes=blockRegexes)
@@ -1724,10 +1739,19 @@ def validateMonth(
         return value
 
     try:
+        monthAsIntegerValue = int(value)
         if (monthNames == ENGLISH_MONTHS) and (
-            1 <= int(value) <= 12
+            1 <= monthAsIntegerValue <= 12
         ):  # This check here only applies to months, not when validateDayOfWeek() calls this function.
-            return ENGLISH_MONTH_NAMES[int(value) - 1]
+            if returnNumber:
+                return monthAsIntegerValue
+            monthIndexInENGLISH_MONTH_NAMES = monthAsIntegerValue - 1
+            monthName = ENGLISH_MONTH_NAMES[monthIndexInENGLISH_MONTH_NAMES]
+            if returnAbbreviation:
+                abbreviatedMonthName = monthName[:3]
+                return abbreviatedMonthName
+            else:
+                return monthName
     except:
         pass  # continue if the user didn't enter a number 1 to 12.
 
@@ -1736,7 +1760,16 @@ def validateMonth(
         _raiseValidationException(_("%r is not a month.") % (_errstr(value)), excMsg)
 
     if value[:3].upper() in monthNames.keys():  # check if value is a month abbreviation
-        return monthNames[value[:3].upper()]  # It turns out that titlecase is good for all the month.
+        monthNameThreeLetterAbbreviation = value[:3]
+        monthNameThreeLetterAbbreviationUppercase = monthNameThreeLetterAbbreviation.upper()
+        monthNameTitlecase = monthNames[monthNameThreeLetterAbbreviationUppercase]
+        if (monthNames == ENGLISH_MONTHS) and returnNumber:
+            monthNumber = ENGLISH_MONTH_NAMES.index(monthNameTitlecase) + 1
+            return monthNumber
+        elif (monthNames == ENGLISH_MONTHS) and returnAbbreviation:
+            monthNameThreeLetterAbbreviationTitlecase = monthNameThreeLetterAbbreviation.title()
+            return monthNameThreeLetterAbbreviationTitlecase
+        return monthNameTitlecase  # It turns out that titlecase is good for all the months.
     elif value.upper() in monthNames.values():  # check if value is a month name
         return value.title()
 
